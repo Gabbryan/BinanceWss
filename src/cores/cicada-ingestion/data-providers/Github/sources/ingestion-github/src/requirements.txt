@@ -1,0 +1,10 @@
+pandas
+protobuf
+PyGithub
+python-dotenv
+Requests
+schedule
+tqdm
+urllib3
+github
+pyarrow

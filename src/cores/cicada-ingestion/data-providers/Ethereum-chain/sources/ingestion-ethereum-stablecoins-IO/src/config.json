@@ -1,0 +1,20 @@
+{
+  "file_path": "data.parquet",
+  "start_date": "2024-01-01",
+  "end_date": "2024-06-30",
+  "resample_period": "4h",
+  "anomaly_contamination": 0.07,
+  "return_target_pct": 0.5,
+  "trailing_stop_pct": 0.02,
+  "volume_threshold_pct": 0.85,
+  "qty_threshold_pct": 0.85,
+  "scaling_factor": 20,
+  "candlestick_color_up": "gray",
+  "candlestick_color_down": "black",
+  "top_clusters_marker": "D",
+  "top_clusters_color_buy": "green",
+  "top_clusters_color_sell": "orange",
+  "anomalies_color_buy": "blue",
+  "anomalies_color_sell": "red",
+  "brick_size": 5000
+}

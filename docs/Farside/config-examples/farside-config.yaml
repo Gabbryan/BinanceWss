@@ -1,0 +1,6 @@
+# Farside - Example Configuration
+
+source_name: farside_etf
+api:
+  base_url: https://api.farside.com
+  api_key: YOUR_API_KEY

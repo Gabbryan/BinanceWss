@@ -1,0 +1,127 @@
+services:
+  ingestion-hist-book-depth:
+    build:
+      context: ../..
+      dockerfile: ../../docker/cores/ingestion-data-vision-binance/Dockerfile
+    volumes:
+      - ./../../cores/ingestion-data-vision-Binance/src:/app/
+      - ./../../cores/ingestion-data-vision-Binance/src/.env:/app/.env
+      - ../../../cores/bookDepth/historical/ingestion/logs/:/app/logs
+    container_name: ingestion-hist-book-depth
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - SYMBOL_LIST=BTCUSDT,ETHUSDT,BNBUSDT,SOLUSDT,XRPUSDT,TONUSDT,DOGEUSDT,ADAUSDT,TRXUSDT,AVAXUSDT
+      - COLUMN_LIST=percentage,depth,notional,timestamp
+      - DATANAME=bookDepth
+      - KEEP_LOCAL=False
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/key.json
+    command: ["python", "main.py"]
+  ingestion-hist-liquidation-snapshot:
+    build:
+      context: ../..
+      dockerfile: ../../docker/cores/ingestion-data-vision-binance/Dockerfile
+    volumes:
+      - ./../../cores/ingestion-data-vision-Binance/src:/app/
+      - ./../../cores/ingestion-data-vision-Binance/src/.env:/app/.env
+      - ../../../cores/liquidationSnapshot/historical/ingestion/logs/:/app/logs
+    container_name: ingestion-hist-liquidation-snapshot
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - SYMBOL_LIST=BTCUSDT,ETHUSDT,BNBUSDT,SOLUSDT,XRPUSDT,TONUSDT,DOGEUSDT,ADAUSDT,TRXUSDT,AVAXUSDT
+      - COLUMN_LIST=side,order_type,time_in_force,original_quantity,price,average_price,order_status,last_fill_quantity,accumulated_fill_quantity
+      - DATANAME=liquidationSnapshot
+      - KEEP_LOCAL=False
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/key.json
+    command: ["python", "main.py"]
+  ingestion-hist-metrics:
+    build:
+      context: ../..
+      dockerfile: ../../docker/cores/ingestion-data-vision-binance/Dockerfile
+    volumes:
+      - ./../../cores/ingestion-data-vision-Binance/src:/app/
+      - ./../../cores/ingestion-data-vision-Binance/src/.env:/app/.env
+      - ../../../cores/metrics/historical/ingestion/logs/:/app/logs
+    container_name: ingestion-hist-metrics
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - SYMBOL_LIST=BTCUSDT,ETHUSDT,BNBUSDT,SOLUSDT,XRPUSDT,TONUSDT,DOGEUSDT,ADAUSDT,TRXUSDT,AVAXUSDT
+      - COLUMN_LIST=symbol,sum_open_interest,sum_open_interest_value,count_toptrader_long_short_ratio,sum_toptrader_long_short_ratio,count_long_short_ratio,sum_taker_long_short_vol_ratio
+      - DATANAME=metrics
+      - KEEP_LOCAL=False
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/key.json
+    command: ["python", "main.py"]
+  ingestion-hist-agg-trades:
+    build:
+      context: ../..
+      dockerfile: ../../docker/cores/ingestion-data-vision-binance/Dockerfile
+    volumes:
+      - ./../../cores/ingestion-data-vision-Binance/src:/app/
+      - ./../../cores/ingestion-data-vision-Binance/src/.env:/app/.env
+      - ../../../cores/aggTrades/historical/ingestion/logs/:/app/logs
+    container_name: ingestion-hist-agg-trades
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - SYMBOL_LIST=BTCUSDT,ETHUSDT,BNBUSDT,SOLUSDT,XRPUSDT,TONUSDT,DOGEUSDT,ADAUSDT,TRXUSDT,AVAXUSDT
+      - COLUMN_LIST=agg_trade_id,price,quantity,first_trade_id,last_trade_id,transact_time,is_buyer_maker
+      - DATANAME=aggTrades
+      - KEEP_LOCAL=False
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/key.json
+    command: ["python", "main.py"]
+  ingestion-hist-trades:
+    build:
+      context: ../..
+      dockerfile: ../../docker/cores/ingestion-data-vision-binance/Dockerfile
+    volumes:
+      - ./../../cores/ingestion-data-vision-Binance/src:/app/
+      - ./../../cores/ingestion-data-vision-Binance/src/.env:/app/.env
+      - ../../../cores/trades/historical/ingestion/logs/:/app/logs
+    container_name: ingestion-hist-trades
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - SYMBOL_LIST=BTCUSDT,ETHUSDT,BNBUSDT,SOLUSDT,XRPUSDT,TONUSDT,DOGEUSDT,ADAUSDT,TRXUSDT,AVAXUSDT
+      - COLUMN_LIST=id,price,qty ,quote_qty,time,is_buyer_maker
+      - DATANAME=trades
+      - KEEP_LOCAL=False
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/key.json
+    command: ["python", "main.py"]
+  ingestion-hist-book-ticker:
+    build:
+      context: ../..
+      dockerfile: ../../docker/cores/ingestion-data-vision-binance/Dockerfile
+    volumes:
+      - ./../../cores/ingestion-data-vision-Binance/src:/app/
+      - ./../../cores/ingestion-data-vision-Binance/src/.env:/app/.env
+      - ../../../cores/bookTicker/historical/ingestion/logs/:/app/logs
+    container_name: ingestion-hist-book-ticker
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - SYMBOL_LIST=BTCUSDT,ETHUSDT,BNBUSDT,SOLUSDT,XRPUSDT,TONUSDT,DOGEUSDT,ADAUSDT,TRXUSDT,AVAXUSDT
+      - COLUMN_LIST=update_id,best_bid_price,best_bid_qty ,best_ask_price,best_ask_qty,transaction_time,event_time
+      - DATANAME=bookTicker
+      - KEEP_LOCAL=False
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/key.json
+    command: ["python", "main.py"]
+  ingestion-hist-klines:
+    build:
+      context: ../..
+      dockerfile: ../../docker/cores/ingestion-data-vision-binance/Dockerfile
+    volumes:
+      - ./../../cores/ingestion-data-vision-Binance/src:/app/
+      - ./../../cores/ingestion-data-vision-Binance/src/.env:/app/.env
+      - ../../../cores/klines/historical/ingestion/logs/:/app/logs
+    container_name: ingestion-hist-klines
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - SYMBOL_LIST=BTCUSDT,ETHUSDT,BNBUSDT,SOLUSDT,XRPUSDT,TONUSDT,DOGEUSDT,ADAUSDT,TRXUSDT,AVAXUSDT
+      - COLUMN_LIST=open_time,open,high,low,close,volume,close_time,quote_volume,count,taker_buy_volume,taker_buy_quote_volume,ignore
+      - DATANAME=klines
+      - KEEP_LOCAL=False
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/key.json
+    command: ["python", "main.py"]

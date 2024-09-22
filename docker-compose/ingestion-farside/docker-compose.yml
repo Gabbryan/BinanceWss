@@ -1,0 +1,15 @@
+services:
+  ingestion-farside-hist-etf:
+    build:
+      context: ../..
+      dockerfile: ../../docker/cores/ingestion-farside/Dockerfile
+    volumes:
+      - ./../../cores/ingestion-farside-ETF/src:/app/
+      - ./../../cores/ingestion-farside-ETF/src/.env:/app/.env
+      - ../../../cores/cryptoETFs/historical/ingestion/logs/:/app/logs
+    container_name: ingestion-farside-ETF-hist-etf
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/key.json
+    command: ["python", "main.py"]

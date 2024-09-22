@@ -1,0 +1,10 @@
+beautifulsoup4
+pandas
+protobuf
+python-dotenv
+Requests
+schedule
+tqdm
+urllib3
+google-cloud-storage
+pyarrow

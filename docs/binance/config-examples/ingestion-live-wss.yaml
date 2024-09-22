@@ -1,0 +1,8 @@
+# Binance Live WSS - Example Configuration
+
+source_name: binance_live_wss
+api:
+  base_url: wss://stream.binance.com:9443/ws
+  endpoint: /ws/!ticker@arr
+  api_key: YOUR_API_KEY
+  secret_key: YOUR_SECRET_KEY

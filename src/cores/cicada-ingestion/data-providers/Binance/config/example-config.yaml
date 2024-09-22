@@ -1,0 +1,63 @@
+# source1-config.yaml
+# Configuration file for Binance Spot Market (Source 1)
+
+source_name: binance_spot
+provider: binance
+description: >
+  Configuration for Binance Spot Market data ingestion, transformation, and validation.
+
+# API Settings
+api:
+  base_url: https://api.binance.com
+  endpoints:
+    historical_trades: /api/v3/historicalTrades
+    agg_trades: /api/v3/aggTrades
+    trades: /api/v3/trades
+  api_key: YOUR_API_KEY_HERE
+  secret_key: YOUR_SECRET_KEY_HERE
+  rate_limit: 1200 # Number of requests per minute
+
+# Data Ingestion Configuration
+ingestion:
+  start_date: "2023-01-01"
+  end_date: "2024-01-01"
+  symbols:
+    - BTCUSDT
+    - ETHUSDT
+    - BNBUSDT
+  storage:
+    type: s3 # Storage location (s3, local, gcs, etc.)
+    bucket_name: binance-spot-data
+    prefix: raw/
+  schedule:
+    cron: "0 0 * * *" # Daily at midnight
+
+# Data Transformation Configuration
+transformation:
+  output_format: parquet
+  partitions:
+    - date
+    - symbol
+  aggregation:
+    time_interval: 1m # Aggregate data every 1 minute
+  output_location:
+    storage: s3
+    bucket_name: binance-spot-data
+    prefix: processed/
+
+# Data Validation Configuration
+validation:
+  enabled: true
+  validation_steps:
+    - check_missing_data # Ensure no missing data in time intervals
+    - check_data_integrity # Validate data integrity (e.g., data types, range)
+
+# Notifications Configuration (optional)
+notifications:
+  slack_channel: "#data-ingestion-alerts"
+  email: "data-team@example.com"
+
+# Logging Configuration
+logging:
+  level: INFO # Logging level (DEBUG, INFO, WARNING, ERROR)
+  file: logs/binance_spot_ingestion.log

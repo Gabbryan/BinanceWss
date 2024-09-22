@@ -1,0 +1,11 @@
+version: "3.8"
+
+services:
+  live-data-aggregator:
+    build:
+      context: ../../../LiveDataAggregator
+      dockerfile: ../../../../cicada-ingestion/docker/aggTrades/live/stockage/Dockerfile
+    container_name: LiveDataAggregator
+    volumes:
+      - ./src:/usr/src/app
+    command: ["python", "main.py"]

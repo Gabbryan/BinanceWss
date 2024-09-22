@@ -1,0 +1,38 @@
+version: "3.8"
+
+networks:
+  spark-network:
+    driver: bridge
+
+volumes:
+  spark-logs:
+  spark-config:
+  spark-events: # Adding a volume for spark-events
+
+services:
+  pyspark-app:
+    build:
+      context: ../../../..
+      dockerfile: ../../../../docker/aggTrades/historical/transformation/Dockerfile
+    container_name: transformation-pyspark-app
+    hostname: transformation-pyspark-app
+    networks:
+      - spark-network
+    env_file: ../../../../cicada-ingestion/.env
+    user: root
+    volumes:
+      - spark-logs:/opt/bitnami/spark/logs
+      - spark-events:/opt/bitnami/spark/spark-events
+      - ./spark-config/core-site.xml:/opt/bitnami/spark/conf/core-site.xml:ro
+      - ./spark-config/log4j.properties:/opt/bitnami/spark/conf/log4j.properties:ro
+      - ./spark-config/spark-defaults.conf:/opt/bitnami/spark/conf/spark-defaults.conf:ro
+      - ./../../../../cores/aggTrades/historical/transformation/src:/opt/bitnami/spark/app:ro
+    command:
+      [
+        "/opt/bitnami/spark/bin/spark-submit",
+        "--master",
+        "local[*]",
+        "--deploy-mode",
+        "client",
+        "/opt/bitnami/spark/app/main.py",
+      ]

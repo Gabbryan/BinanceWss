@@ -1,0 +1,22 @@
+# Docker Management Script
+
+This script helps you manage Docker Compose services with a specific naming pattern and provides commands for various Docker Compose operations.
+
+## Features
+
+- **Start services (`up`)**: Bring up Docker Compose services.
+- **Stop services (`down`)**: Stop and remove Docker Compose services.
+- **Build services (`build`)**: Build or rebuild Docker Compose services.
+- **Build services without cache (`build-no-cache`)**: Build or rebuild Docker Compose services without using cache.
+
+## Usage
+
+The script supports the following commands:
+
+### Commands
+
+- **`up`**: Start the services defined in the `docker-compose.yml` files that begin with `ingestion-`. The services will run in the background.
+
+  ```bash
+  python manage_docker.py up
+  ```

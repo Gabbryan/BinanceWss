@@ -1,0 +1,6 @@
+# GitHub - Example Configuration
+
+source_name: github_data
+api:
+  base_url: https://api.github.com
+  api_key: YOUR_API_KEY

@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  ingestion-agg-trades:
+    build:
+      context: ../../../..
+      dockerfile: ../../../../docker/aggTrades/historical/ingestion/Dockerfile
+    volumes:
+      - ./../../../../cores/aggTrades/historical/ingestion/src:/app
+      - ./../../../../.env:/app/.env
+      - ./../../../../logs/aggTrades/historical/ingestion:/app/logs
+    container_name: aggTrades_historical_ingestion_binance
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - FETCH_HISTORICAL=1
+      - GOOGLE_APPLICATION_CREDENTIALS=service-account-key.json
+    working_dir: /app
+    command: ["python", "main.py"]

@@ -1,0 +1,8 @@
+# Binance Data Vision - Example Configuration
+
+source_name: binance_data_vision
+api:
+  base_url: https://api.binance.com
+  endpoint: /api/v3/historicalTrades
+  api_key: YOUR_API_KEY
+  secret_key: YOUR_SECRET_KEY

@@ -1,0 +1,10 @@
+matplotlib
+networkx
+numpy
+pandas
+pyarrow
+Requests
+scikit_learn
+seaborn
+tqdm
+web3
