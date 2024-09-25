@@ -1,6 +1,5 @@
 from threading import Thread
 
-
 class ThreadController:
     """
     Manages threading for different clients in an MVC architecture.

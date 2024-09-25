@@ -1,5 +1,4 @@
-from src.libs.tools.return_message.WSS.controller_wss_return_message import ControllerWSSReturnMessage
-from src.libs.wss.server import WSSClient
+from src.libs.tools.wss.server import WSSClient
 
 
 class BinanceWSSClient(WSSClient):
@@ -8,14 +7,15 @@ class BinanceWSSClient(WSSClient):
     This class handles Binance-specific WebSocket streams.
     """
 
-    def __init__(self, symbol, stream="trade", wss_base_url="wss://stream.binance.com:9443/ws/"):
+    BINANCE_WSS_BASE_URL = "wss://stream.binance.com:9443/ws/"
+
+    def __init__(self, symbol, stream="trade"):
         """
         Initialize the Binance WebSocket client with a trading symbol and stream type.
         :param symbol: The trading symbol (e.g., 'btcusdt').
         :param stream: The stream type (e.g., 'trade', 'depth', etc.).
         """
-        self.WSS_base_url = wss_base_url
-        url = f"{self.WSS_base_url}{symbol}@{stream}"
+        url = f"{self.BINANCE_WSS_BASE_URL}{symbol}@{stream}"
         super().__init__(url)
         self.symbol = symbol
         self.stream = stream
@@ -24,10 +24,8 @@ class BinanceWSSClient(WSSClient):
         """
         Handle incoming Binance messages.
         This method is called when the WebSocket receives a message.
-
         """
-        wss_response = ControllerWSSReturnMessage(message, self.symbol, self.stream)
-        wss_response.publish_message()
+        print(f"Received {self.stream} data for {self.symbol}: {message}")
 
     def on_open(self, ws):
         """
