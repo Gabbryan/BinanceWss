@@ -30,3 +30,7 @@ class ServerBuilder(object):
             bReturn = False
 
         return bReturn
+
+
+if __name__ == "__main__":
+    server = ServerBuilder(url='https://api.binance.com/api/v3/ticker/24hr')
