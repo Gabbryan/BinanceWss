@@ -1,0 +1,8 @@
+app:
+  name: MyApp Production
+  version: 1.0
+  debug: false
+
+api:
+  base_url: https://api.myapp.com
+  timeout: 60

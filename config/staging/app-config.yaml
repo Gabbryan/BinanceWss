@@ -1,0 +1,8 @@
+app:
+  name: MyApp Staging
+  version: 1.0
+  debug: false
+
+api:
+  base_url: https://staging-api.myapp.com
+  timeout: 30

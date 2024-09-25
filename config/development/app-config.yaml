@@ -1,0 +1,8 @@
+app:
+  name: MyApp Development
+  version: 1.0
+  debug: true
+
+api:
+  base_url: https://dev-api.myapp.com
+  timeout: 30
