@@ -9,10 +9,9 @@ class EnvController:
     Controller for managing environment variables and YAML configurations.
     """
 
-    def __init__(self, env: str, config_base_path: str = None):
+    def __init__(self, config_base_path: str = None):
         """
         Initialize the controller by specifying the environment and base config path.
-        :param env: The current environment (development, staging, production).
         :param config_base_path: The base path where the environment configurations are stored.
         """
         # Automatically detect the project root if config_base_path is not provided
@@ -21,7 +20,7 @@ class EnvController:
         else:
             self.config_base_path = config_base_path
 
-        self.env = env
+        self.env = os.getenv('ENV', 'development')
         self.yaml_config = {}
         self.load_env_files()
         self.load_yaml_files()

@@ -1,4 +1,4 @@
-from src.libs.google.pub_sub.controller_pub_sub import PubSubController
+from src.libs.providers.google.pub_sub.controller_pub_sub import PubSubController
 
 
 class ControllerWSSReturnMessage:

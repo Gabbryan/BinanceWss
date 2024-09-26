@@ -1,31 +1,12 @@
-from src.libs.CEX.binance.WSS.controller_binance_wss import BinanceWSSClient
-from src.libs.tools.env_manager.env_controller import EnvController
-from src.libs.tools.threading.controller_threading import ThreadController
+from src.commons.env_manager.env_controller import EnvController
+from src.libs.financial.cryptos.CEX.binance.WSS.controller_binance_wss import BinanceWSSClient
+from src.libs.tools.sys.threading.controller_threading import ThreadController
 
 # Initialize the controller for the 'development' environment
-env_controller = EnvController(env="development")
+env_controller = EnvController()
 
-# Access environment variables
-db_host = env_controller.get_env("DB_HOST", "default-db-host")
-api_key = env_controller.get_env("API_KEY", "default-api-key")
-
-print(f"DB Host: {db_host}")
-print(f"API Key: {api_key}")
-
-# Access YAML configurations
-app_name = env_controller.get_yaml_config('app', 'name')
-app_debug = env_controller.get_yaml_config('app', 'debug', default_value=False)
-
-print(f"App Name: {app_name}")
-print(f"Debug Mode: {app_debug}")
-
-# Get Google key path
-google_key_path = env_controller.get_google_key_path()
-if google_key_path:
-    print(f"Google Key Path: {google_key_path}")
-else:
-    print("Google Key not found.")
-
+symbols = env_controller.get_yaml_config('symbols')
+print(f"Symbols: {symbols}")
 if __name__ == "__main__":
     # Define the trading pairs (symbols)
     symbols = ["btcusdt", "ethusdt", "ltcusdt"]

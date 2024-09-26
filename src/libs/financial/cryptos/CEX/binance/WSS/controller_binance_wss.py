@@ -1,4 +1,7 @@
-from src.libs.tools.wss.server import WSSClient
+from src.commons.env_manager.env_controller import EnvController
+from src.libs.tools.sys.wss.server import WSSClient
+
+env = EnvController("development")
 
 
 class BinanceWSSClient(WSSClient):
@@ -7,9 +10,19 @@ class BinanceWSSClient(WSSClient):
     This class handles Binance-specific WebSocket streams.
     """
 
-    BINANCE_WSS_BASE_URL = "wss://stream.binance.com:9443/ws/"
+    def __init__(self, symbol, stream="trade", spot_market=True, testnet=False):
+        if spot_market:
+            if not testnet:
+                self.BINANCE_WSS_BASE_URL = "wss://stream.binance.com:9443/ws/"
+            if testnet:
+                self.BINANCE_WSS_BASE_URL = "wss:"
 
-    def __init__(self, symbol, stream="trade"):
+        if not spot_market:
+            if not testnet:
+                self.BINANCE_WSS_BASE_URL = "wss://ws-fapi.binance.com/ws-fapi/v1"
+            if spot_market:
+                self.BINANCE_WSS_BASE_URL = "wss://testnet.binancefuture.com/ws-fapi/v1"
+
         """
         Initialize the Binance WebSocket client with a trading symbol and stream type.
         :param symbol: The trading symbol (e.g., 'btcusdt').

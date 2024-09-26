@@ -1,71 +1,22 @@
-import asyncio
-import json
-import logging
-import os
+from src.commons.env_manager.env_controller import EnvController
+from src.libs.financial.cryptos.CEX.binance.WSS.controller_binance_wss import BinanceWSSClient
+from src.libs.tools.sys.threading.controller_threading import ThreadController
 
-import aiohttp
-from dotenv import load_dotenv
-from google.cloud import pubsub_v1
-
-load_dotenv()
-
-# Configurer le client Pub/Sub
-project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
-topic_id = os.getenv("PUBSUB_TOPIC_ID", "Binance-topic")
-
-publisher = pubsub_v1.PublisherClient()
-topic_path = publisher.topic_path(project_id, topic_id)
-
-# Configurer le WebSocket Binance
-BINANCE_WS_URL = "wss://stream.Binance.com:9443/ws"
-
-
-# Fonction pour envoyer des messages à Pub/Sub
-async def publish_message(symbol, message):
-    try:
-        future = publisher.publish(
-            topic_path, data=json.dumps(message).encode("utf-8"), symbol=symbol
-        )
-        future.result()
-        logging.info(f"Message publié pour {symbol}")
-    except Exception as e:
-        logging.error(f"Erreur lors de la publication du message : {str(e)}")
-
-
-# Fonction pour traiter les données du marché
-async def process_market_data(symbol, ws):
-    async for msg in ws:
-        if msg.type == aiohttp.WSMsgType.TEXT:
-            data = json.loads(msg.data)
-            await publish_message(symbol, data)
-
-
-# Fonction pour gérer la connexion WebSocket
-async def websocket_handler(symbol):
-    uri = f"{BINANCE_WS_URL}/{symbol}@aggTrade"
-    while True:
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.ws_connect(uri) as ws:
-                    logging.info(f"WebSocket connecté pour {symbol}")
-                    await process_market_data(symbol, ws)
-        except Exception as e:
-            logging.error(f"Erreur WebSocket pour {symbol} : {str(e)}")
-        await asyncio.sleep(5)  # Attendre avant de se reconnecter
-
-
-# Fonction principale
-async def main():
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-    )
-    logging.info("Service démarré...")
-
-    symbols = ["btcusdt"]  # Ajoutez les paires de trading que vous voulez suivre
-    tasks = [asyncio.create_task(websocket_handler(symbol)) for symbol in symbols]
-
-    await asyncio.gather(*tasks)
-
-
+# Initialize the controller for the 'development' environment
+env_controller = EnvController()
 if __name__ == "__main__":
-    asyncio.run(main())
+    # Initialize the controller
+    thread_controller = ThreadController()
+    symbols = env_controller.get_yaml_config('symbols')
+
+    # Create and add WebSocket clients for each symbol
+    for symbol in symbols:
+        binance_client = BinanceWSSClient(symbol, stream="trade")
+        # Adding the client and specifying 'connect' method to run in thread
+        thread_controller.add_thread(binance_client, method_name="connect")
+
+    # Start all threads (each running a WebSocket client)
+    thread_controller.start_all()
+
+    # Optionally, join all threads to stop them cleanly
+    thread_controller.stop_all()

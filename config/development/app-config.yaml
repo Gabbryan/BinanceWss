@@ -6,3 +6,8 @@ app:
 api:
   base_url: https://dev-api.myapp.com
   timeout: 30
+
+symbols:
+  - btcusdt
+  - ethusdt
+  - ltcusdt
