@@ -1,5 +1,5 @@
+from controller_binance_wss import BinanceWSSClient
 from src.commons.env_manager.env_controller import EnvController
-from src.libs.financial.cryptos.CEX.binance.WSS.controller_binance_wss import BinanceWSSClient
 from src.libs.tools.sys.threading.controller_threading import ThreadController
 
 # Initialize the controller for the 'development' environment
@@ -8,10 +8,10 @@ if __name__ == "__main__":
     # Initialize the controller
     thread_controller = ThreadController()
     symbols = env_controller.get_yaml_config('symbols')
-
     # Create and add WebSocket clients for each symbol
     for symbol in symbols:
-        binance_client = BinanceWSSClient(symbol, stream="trade")
+        binance_client = BinanceWSSClient(symbol, stream=env_controller.get_env('stream', 'trade'))
+
         # Adding the client and specifying 'connect' method to run in thread
         thread_controller.add_thread(binance_client, method_name="connect")
 

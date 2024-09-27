@@ -3,6 +3,10 @@ from typing import List, Dict, Any
 import numpy as np
 import pandas as pd
 
+from src.commons.logs.logging_controller import LoggingController
+
+# Initialize the logging controller
+logger = LoggingController()
 
 class TAIndicatorController:
 
@@ -13,18 +17,22 @@ class TAIndicatorController:
         """
         if df is None:
             self.df = self.generate_sample_data(1000)
+            logger.log_info("Sample data generated with 1000 rows.", context={'mod': 'TAIndicatorController', 'action': 'GenerateSampleData'})
         else:
             self.df = df
+            logger.log_info("DataFrame provided by user.", context={'mod': 'TAIndicatorController', 'action': 'LoadDataFrame'})
 
         # Ensure the DataFrame index is datetime and sorted
         self.df.index = pd.to_datetime(self.df.index)
         self.df = self.df.sort_index()
+        logger.log_info("DataFrame index converted to datetime and sorted.", context={'mod': 'TAIndicatorController', 'action': 'IndexSort'})
 
     def generate_sample_data(self, rows: int = 1000) -> pd.DataFrame:
         """
         Generate a DataFrame with coherent stock data for testing.
         """
         np.random.seed(42)
+        logger.log_info(f"Generating {rows} rows of sample stock data.", context={'mod': 'TAIndicatorController', 'action': 'GenerateSampleData'})
 
         # Generate synthetic stock prices
         base_price = 100
@@ -49,6 +57,7 @@ class TAIndicatorController:
         }
 
         df = pd.DataFrame(data)
+        logger.log_info("Sample data generation completed.", context={'mod': 'TAIndicatorController', 'action': 'SampleDataGenerated'})
         return df
 
     def compute_single_indicator(self, indicator_name: str, params: Dict[str, Any] = {}) -> pd.DataFrame:
@@ -56,8 +65,12 @@ class TAIndicatorController:
         Computes a single technical indicator using pandas-ta and returns the result as a DataFrame.
         """
         try:
+            logger.log_info(f"Computing indicator: {indicator_name} with parameters: {params}",
+                            context={'mod': 'TAIndicatorController', 'action': 'ComputeIndicator'})
+
             # Compute the indicator using the DataFrame's ta accessor
             result = getattr(self.df.ta, indicator_name)(**params)
+
             # Append the result to the DataFrame
             if isinstance(result, pd.DataFrame):
                 self.df = pd.concat([self.df, result], axis=1)
@@ -65,8 +78,11 @@ class TAIndicatorController:
                 self.df[result.name] = result
             else:
                 raise ValueError(f"Unexpected result type: {type(result)}")
+
+            logger.log_info(f"Indicator '{indicator_name}' computed successfully.", context={'mod': 'TAIndicatorController', 'action': 'IndicatorComputed'})
             return self.df
         except Exception as e:
+            logger.log_error(f"Error computing indicator '{indicator_name}': {e}", context={'mod': 'TAIndicatorController', 'action': 'ComputeError'})
             raise ValueError(f"Error computing indicator '{indicator_name}': {e}")
 
     def compute_custom_indicators(self, custom_indicators: List[Dict[str, Any]]) -> pd.DataFrame:
@@ -74,13 +90,16 @@ class TAIndicatorController:
         Computes a custom list of indicators with specified parameters.
         Returns the DataFrame with all indicators computed.
         """
+        logger.log_info(f"Computing custom indicators: {custom_indicators}", context={'mod': 'TAIndicatorController', 'action': 'ComputeCustomIndicators'})
         for indicator in custom_indicators:
             indicator_name = indicator['name']
             params = indicator.get('params', {})
             try:
                 self.compute_single_indicator(indicator_name, params)
             except Exception as e:
-                print(f"Failed to compute indicator '{indicator_name}': {e}")
+                logger.log_warning(f"Failed to compute indicator '{indicator_name}': {e}",
+                                   context={'mod': 'TAIndicatorController', 'action': 'ComputeCustomError'})
+        logger.log_info("All custom indicators computed successfully.", context={'mod': 'TAIndicatorController', 'action': 'CustomIndicatorsComputed'})
         return self.df
 
     def get_dataframe(self) -> pd.DataFrame:
@@ -90,12 +109,14 @@ class TAIndicatorController:
         Returns:
         - pd.DataFrame: The DataFrame containing stock data and computed indicators.
         """
+        logger.log_info("Returning the DataFrame with computed indicators.", context={'mod': 'TAIndicatorController', 'action': 'GetDataFrame'})
         return self.df
 
     def display_full_dataframe(self) -> None:
         """
         Temporarily changes the Pandas settings to display the entire DataFrame without truncation.
         """
+        logger.log_info("Displaying the full DataFrame.", context={'mod': 'TAIndicatorController', 'action': 'DisplayDataFrame'})
         with pd.option_context('display.max_rows', None, 'display.max_columns', None):
             print(self.df.tail())
 

@@ -1,40 +1,52 @@
-import json
+from src.commons.env_manager.env_controller import EnvController
+from src.libs.third_services.google.pub_sub.server_pub_sub import ServerPubSub
 
-from google.cloud import pubsub_v1
+env = EnvController()
 
 
-class PubSubController:
+class ControllerPubSub:
     """
-    A controller to manage Google Cloud Pub/Sub publishing.
-    Can be extended or integrated with other clients or controllers.
+    A controller class for handling WebSocket return messages.
     """
 
-    def __init__(self, project_id, topic_id):
+    def __init__(self, message, topic_id, parquet_path=None, pub_sub=False):
         """
-        Initialize the Pub/Sub client and topic path.
-        :param project_id: Google Cloud Project ID.
-        :param topic_id: Pub/Sub Topic ID.
+        Initialize the controller with a WebSocket message and a path for saving the data.
+        :param message: The WebSocket message.
+        :param parquet_path: The path for saving the data.
+        :param pub_sub: Whether the message is from a pub/sub channel (default is False).
         """
-        self.project_id = project_id
-        self.topic_id = topic_id
-        self.publisher = pubsub_v1.PublisherClient()
-        self.topic_path = self.publisher.topic_path(self.project_id, self.topic_id)
+        self.message = message
+        self.parquet_path = parquet_path
+        self.pub_sub = pub_sub
+        self.data = None
+        self.error = None
+        self.status = None
+        self.pub_sub_controller = ServerPubSub(project_id=env.get_env("GOOGLE_CLOUD_PROJECT"), topic_id=topic_id)
 
-    async def publish_message(self, symbol, message):
+    def parse_message(self):
         """
-        Asynchronously publish a message to Pub/Sub.
-        :param symbol: The symbol to associate with the message.
-        :param message: The message to be published.
+        Parse the WebSocket message and extract relevant data.
         """
-        try:
-            # Prepare the message as bytes
-            message_data = json.dumps(message).encode("utf-8")
-            # Publish the message to the specified Pub/Sub topic
-            future = self.publisher.publish(
-                self.topic_path, data=message_data, symbol=symbol
-            )
-            # Wait for the result of the publish (blocking or awaiting the result)
-            future.result()  # Will raise an exception if publish fails
-        except Exception as e:
-            # Handle error
-            print(f"Error publishing message for {symbol}: {str(e)}")
+        return self.message
+
+    def publish_message(self):
+        """
+        Publish the parsed message to a message broker.
+        """
+        # TODO: Implement message publishing logic
+        response = {"status": "ERROR", "error": "Not implemented"}
+        if self.pub_sub:
+            if not self.message is None:
+                self.data = self.parse_message()
+                response = self.pub_sub_controller.publish_message(self.data)
+        if self.parquet_path is not None:
+            self.save_message()
+        return response
+
+    def save_message(self, format="parquet"):
+        """
+        Save the parsed message to a file.
+        :param format: The format to save the data (default is 'parquet').
+        """
+        return 1

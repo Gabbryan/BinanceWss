@@ -1,4 +1,5 @@
 import logging
+import os
 from logging.handlers import TimedRotatingFileHandler
 
 
@@ -13,10 +14,16 @@ class CustomFormatter(logging.Formatter):
 
 
 class LoggingController:
-    def __init__(self, log_file: str = 'app.log', level: int = logging.INFO, rotation_when: str = 'midnight', interval: int = 1, backup_count: int = 7):
+    def __init__(self, log_file: str = 'logs/app.log', level: int = logging.INFO, rotation_when: str = 'midnight', interval: int = 1, backup_count: int = 7):
         """
-        Initialise le contrôleur de logging avec rotation des logs par défaut quotidienne.
+        Initialize the logging controller with log file rotation, ensuring the log directory exists.
         """
+        # Ensure the log directory exists
+        log_dir = os.path.dirname(log_file)
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+
+        # Set up logger
         self.logger = logging.getLogger('appLogger')
         self.logger.setLevel(level)
 
@@ -70,15 +77,3 @@ class LoggingController:
             adapter.critical(message)
         else:
             self.logger.critical(message)
-
-
-if __name__ == "__main__":
-    # Daily rotation at midnight with default configuration
-    logger = LoggingController(log_file='application.log', level=logging.DEBUG)
-
-    # Logs with different levels and optional context
-    logger.log_info("Application started", context={"user": "admin", "action": "login"})
-    logger.log_debug("This is a debug message")
-    logger.log_warning("This is a warning", context={"mod": "authentication"})
-    logger.log_error("This is an error", context={"user": "guest", "action": "access_denied"})
-    logger.log_critical("Critical issue occurred!", context={"system": "database", "status": "unavailable"})
