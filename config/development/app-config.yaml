@@ -11,3 +11,10 @@ symbols:
   - btcusdt
   - ethusdt
   - ltcusdt
+
+timeframes:
+  - 1h
+  - 4h
+
+DBV_bucket_name:
+ - production_trustia_raw_data

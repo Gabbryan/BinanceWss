@@ -1,8 +1,7 @@
 import os
 
 import pandas as pd
-
-from server_gcs import GCSClient
+from src.libs.third_services.google.google_cloud_bucket.server_gcs import GCSClient
 from src.commons.logs.logging_controller import LoggingController
 
 # Initialize the logging controller

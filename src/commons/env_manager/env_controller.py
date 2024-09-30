@@ -1,5 +1,4 @@
 import os
-
 import yaml
 from dotenv import load_dotenv
 
@@ -116,5 +115,13 @@ class EnvController:
         """
         google_key_path = os.path.join(self.config_base_path, "shared", "key.json")
         if os.path.exists(google_key_path):
+            self.set_env(google_key_path, "GOOGLE_APPLICATION_CREDENTIALS")
+            print(self.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
             return google_key_path
         return None
+    
+    def set_env(self, value, key):
+        os.environ[key] = value
+
+        
+        
