@@ -1,0 +1,7 @@
+pandas_options:
+  display.max_rows: 100
+  display.max_columns: 10
+  display.precision: 3
+  display.float_format: "%.3f"
+  mode.chained_assignment: "warn"
+  io.formats.html.border: 1
