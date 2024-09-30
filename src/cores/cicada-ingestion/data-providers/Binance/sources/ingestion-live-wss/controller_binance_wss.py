@@ -1,7 +1,7 @@
 from src.commons.env_manager.env_controller import EnvController
 from src.commons.logs.logging_controller import LoggingController
 from src.libs.third_services.google.pub_sub.controller_pub_sub import ControllerPubSub
-from src.libs.tools.sys.wss.server import WSSClient
+from src.libs.utils.sys.wss.server import WSSClient
 
 env_controller = EnvController("development")
 logger = LoggingController()

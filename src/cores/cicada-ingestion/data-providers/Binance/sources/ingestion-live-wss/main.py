@@ -1,9 +1,10 @@
 from controller_binance_wss import BinanceWSSClient
 from src.commons.env_manager.env_controller import EnvController
-from src.libs.tools.sys.threading.controller_threading import ThreadController
+from src.libs.utils.sys.threading.controller_threading import ThreadController
 
 # Initialize the controller for the 'development' environment
 env_controller = EnvController()
+
 if __name__ == "__main__":
     # Initialize the controller
     thread_controller = ThreadController()
