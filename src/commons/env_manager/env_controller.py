@@ -24,6 +24,7 @@ class EnvController:
         self.yaml_config = {}
         self.load_env_files()
         self.load_yaml_files()
+        self.set_google_key_path()
 
     def find_project_root(self):
         """
@@ -112,9 +113,21 @@ class EnvController:
 
     def get_google_key_path(self):
         """
-        Returns the path to the Google Cloud key file.
+        Returns the path to the Google Cloud key file and sets it as the environment variable.
         """
         google_key_path = os.path.join(self.config_base_path, "shared", "key.json")
         if os.path.exists(google_key_path):
+            google_key_path = self.get_env('GOOGLE_APPLICATION_CREDENTIALS')
             return google_key_path
-        return None
+        else:
+            raise FileNotFoundError(f"Google Cloud key file not found at: {google_key_path}")
+
+    def set_google_key_path(self):
+        """
+        Returns the path to the Google Cloud key file and sets it as the environment variable.
+        """
+        google_key_path = os.path.join(self.config_base_path, "shared", "key.json")
+        if os.path.exists(google_key_path):
+            os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = google_key_path
+        else:
+            raise FileNotFoundError(f"Google Cloud key file not found at: {google_key_path}")

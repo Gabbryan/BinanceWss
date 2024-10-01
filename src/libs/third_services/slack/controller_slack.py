@@ -1,4 +1,4 @@
-from server_slack import SlackAPI
+from src.libs.third_services.slack.server_slack import SlackAPI
 
 
 class SlackMessageController:
