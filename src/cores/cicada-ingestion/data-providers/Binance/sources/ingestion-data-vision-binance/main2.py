@@ -5,6 +5,7 @@ from src.commons.env_manager.env_controller import EnvController
 from src.libs.utils.sys.threading.controller_threading import ThreadController
 from src.libs.third_services.google.google_cloud_bucket.controller_gcs import GCSController
 from controller_binance_data_vision import BinanceDataVision
+from src.commons.syn.server.server import Server
 
 # TODO: A INTERFACER ??
 from datetime import datetime, timedelta
@@ -21,5 +22,6 @@ if __name__ == "__main__":
     initial_start_date = datetime(2024, 9, 28)
     initial_end_date = datetime.today()
     for symbol in symbols : 
+        
         binance_data_vision = BinanceDataVision(symbol, env_controller.get_yaml_config('timeframes'))
         print(binance_data_vision)

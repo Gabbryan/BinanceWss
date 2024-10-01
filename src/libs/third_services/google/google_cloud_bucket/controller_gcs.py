@@ -1,11 +1,12 @@
 import os
+import tempfile
 
-import pandas as pd
-from src.libs.third_services.google.google_cloud_bucket.server_gcs import GCSClient
+from server_gcs import GCSClient
 from src.commons.logs.logging_controller import LoggingController
 
 # Initialize the logging controller
 logger = LoggingController()
+
 
 class GCSController:
     def __init__(self, bucket_name):
@@ -17,83 +18,142 @@ class GCSController:
         self.gcs_client = GCSClient(bucket_name)
         logger.log_info(f"GCS Controller initialized with bucket: {bucket_name}", context={'mod': 'GCSController', 'action': 'Init'})
 
-    def generate_gcs_paths(self, symbol, start_year, end_year, start_month, end_month):
+    def _generate_temp_file(self, file_format='parquet'):
         """
-        Generate the GCS paths for uploading files.
+        Generate a secure temporary file with the specified file format.
 
-        :param symbol: The symbol representing the data.
-        :param start_year: The starting year of the data.
-        :param end_year: The ending year of the data.
-        :param start_month: The starting month of the data.
-        :param end_month: The ending month of the data.
-        :return: A list of tuples containing (year, month, GCS path).
+        :param file_format: The file extension (e.g., 'parquet', 'csv')
+        :return: The path to the temporary file.
         """
-        logger.log_info(f"Generating GCS paths for symbol: {symbol} from {start_year}-{start_month} to {end_year}-{end_month}",
+        suffix = f'.{file_format}'
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
+            return temp_file.name
+
+    def _save_data_to_temp(self, data, file_format='parquet'):
+        """
+        Save data to a temporary file in the specified format.
+
+        :param data: The data to be saved (generic - can be DataFrame, etc.).
+        :param file_format: The file format to save (default is 'parquet').
+        :return: The path to the saved temporary file.
+        """
+        temp_file = self._generate_temp_file(file_format)
+        if file_format == 'parquet':
+            data.to_parquet(temp_file, index=False)
+        elif file_format == 'csv':
+            data.to_csv(temp_file, index=False)
+        else:
+            raise ValueError(f"Unsupported file format: {file_format}")
+
+        logger.log_info(f"Data saved to temporary file: {temp_file}", context={'mod': 'GCSController', 'action': 'SaveData'})
+        return temp_file
+
+    def _upload_to_gcs(self, local_file, gcs_path):
+        """
+        Upload a file to GCS and handle cleanup.
+
+        :param local_file: The local file path.
+        :param gcs_path: The GCS destination path.
+        """
+        try:
+            # Upload the file to GCS
+            self.gcs_client.upload_file(local_file, gcs_path)
+            logger.log_info(f"Uploaded {local_file} to GCS path {gcs_path}", context={'mod': 'GCSController', 'action': 'UploadToGCS'})
+        except Exception as e:
+            logger.log_error(f"Error uploading file to GCS: {e}", context={'mod': 'GCSController', 'action': 'UploadError'})
+            raise
+
+    def _remove_temp_file(self, temp_file):
+        """
+        Remove the temporary file after it has been uploaded to GCS.
+
+        :param temp_file: The path to the temporary file to remove.
+        """
+        try:
+            os.remove(temp_file)
+            logger.log_info(f"Removed temporary file: {temp_file}", context={'mod': 'GCSController', 'action': 'RemoveTempFile'})
+        except Exception as e:
+            logger.log_error(f"Error removing temporary file: {e}", context={'mod': 'GCSController', 'action': 'RemoveTempFileError'})
+
+    def generate_gcs_paths(self, parameters, template, file_format="parquet"):
+        """
+        Generate GCS paths based on a flexible template.
+
+        :param parameters: A dictionary containing the values to populate the template (e.g., {'symbol': 'BTC', 'year': 2023}).
+        :param template: A string template for generating the GCS path. Use placeholders like {symbol}, {year}, {month}, etc.
+        :param file_format: The file format to be used in the path (default is 'parquet').
+        :return: A list of GCS paths with placeholders replaced by the actual parameter values.
+        """
+        logger.log_info(f"Generating GCS paths with template: {template} and parameters: {parameters}",
                         context={'mod': 'GCSController', 'action': 'GeneratePaths'})
 
+        # Initialize paths list
         gcs_paths = []
-        for year in range(int(start_year), int(end_year) + 1):
-            month_start = int(start_month) if year == int(start_year) else 1
-            month_end = int(end_month) if year == int(end_year) else 12
-            for month in range(month_start, month_end + 1):
-                gcs_path = f"Raw/farside/{symbol}/{year}/{month:02d}/data.parquet"
-                gcs_paths.append((year, month, gcs_path))
+
+        # Expand the parameters to generate paths
+        year_range = parameters.get('year_range', [])
+        month_range = parameters.get('month_range', [])
+
+        # Handle cases with year and month or without them
+        if year_range and month_range:
+            for year in year_range:
+                for month in month_range:
+                    path = template.format(symbol=parameters['symbol'], year=year, month=f"{month:02d}", file_format=file_format)
+                    gcs_paths.append(path)
+        else:
+            # Generate path without year/month if not applicable
+            path = template.format(**parameters, file_format=file_format)
+            gcs_paths.append(path)
+
         logger.log_info(f"Generated {len(gcs_paths)} GCS paths.", context={'mod': 'GCSController', 'action': 'GeneratePathsComplete'})
         return gcs_paths
-
-    def aggregate_and_upload(self, df, symbol):
+    
+    def upload_dataframe_to_gcs(self, df, gcs_path, file_format='parquet'):
         """
-        Aggregate the DataFrame data and upload it to GCS in monthly chunks.
+        Save a pandas DataFrame as a Parquet file and upload it to GCS.
 
-        :param df: The pandas DataFrame containing the data.
-        :param symbol: The symbol representing the data.
+        :param df: The pandas DataFrame to be saved and uploaded.
+        :param gcs_path: The destination path in the GCS bucket.
+        :param file_format: The file format to save the DataFrame (default is 'parquet').
         """
-        if df is not None and not df.empty:
-            logger.log_info(f"Starting aggregation and upload for symbol: {symbol}", context={'mod': 'GCSController', 'action': 'StartAggregateUpload'})
+        logger.log_info(f"Starting DataFrame upload to GCS as {file_format} format.", 
+                        context={'mod': 'GCSController', 'action': 'StartDFUpload'})
 
-            # Ensure 'Date' column is in datetime format
-            df["Date"] = pd.to_datetime(df["Date"], format="%d %b %Y", errors="coerce")
-            df = df.dropna(subset=["Date"])
+        try:
+            # Save DataFrame to a temporary file
+            temp_file = self._save_data_to_temp(df, file_format)
+            
+            # Upload the Parquet file to GCS
+            self._upload_to_gcs(temp_file, gcs_path)
+            logger.log_info(f"Uploaded DataFrame to {gcs_path} in GCS.", 
+                            context={'mod': 'GCSController', 'action': 'DFUploadSuccess'})
 
-            # Get min and max dates
-            min_date = df["Date"].min()
-            max_date = df["Date"].max()
+        except Exception as e:
+            logger.log_error(f"Error uploading DataFrame to GCS: {e}", 
+                            context={'mod': 'GCSController', 'action': 'DFUploadError'})
+            raise
 
-            # Determine start and end year/month
-            start_year = min_date.year
-            start_month = min_date.month
-            end_year = max_date.year
-            end_month = max_date.month
+        finally:
+            # Remove the temporary file after upload
+            self._remove_temp_file(temp_file)
+    
+if __name__ == "main":
 
-            # Generate paths
-            paths = self.generate_gcs_paths(symbol, start_year, end_year, start_month, end_month)
+# params = {
+# 'symbol': 'BTC',
+# 'year_range': range(2021, 2023),
+# 'month_range': range(1, 13)
+# }
+# template = "Raw/{symbol}/{year}/{month}/data.{file_format}"
+# gcs_paths = gcs_controller.generate_gcs_paths(params, template)
 
-            # Group by year and month
-            df["Year"] = df["Date"].dt.year
-            df["Month"] = df["Date"].dt.month
+# params = {
+#     'symbol': 'BTC',
+#     'month_range': range(1, 13)
+# }
+# template = "Raw/{symbol}/Month_{month}/data.{file_format}"
+# gcs_paths = gcs_controller.generate_gcs_paths(params, template)
 
-            for year, month, gcs_path in paths:
-                month_df = df[(df["Year"] == year) & (df["Month"] == month)].drop(columns=["Year", "Month"])
-                if not month_df.empty:
-                    try:
-                        # Generate temp local file
-                        temp_local_file = f"/tmp/{symbol.replace('/', '')}_{year}_{month:02d}.parquet"
-
-                        # Save to parquet
-                        month_df.to_parquet(temp_local_file, index=False)
-                        logger.log_info(f"Saved DataFrame for {symbol} {year}-{month:02d} to {temp_local_file}",
-                                        context={'mod': 'GCSController', 'action': 'SaveToParquet'})
-
-                        # Upload to GCS
-                        self.gcs_client.upload_file(temp_local_file, gcs_path)
-                        logger.log_info(f"Uploaded {temp_local_file} to GCS path {gcs_path}", context={'mod': 'GCSController', 'action': 'UploadToGCS'})
-
-                        # Remove temp file
-                        os.remove(temp_local_file)
-                        logger.log_info(f"Removed temporary file {temp_local_file}", context={'mod': 'GCSController', 'action': 'RemoveTempFile'})
-
-                    except Exception as e:
-                        logger.log_error(f"Error processing {symbol} {year}-{month:02d}: {e}", context={'mod': 'GCSController', 'action': 'ErrorInUpload'})
-        else:
-            logger.log_warning(f"No data to process for symbol: {symbol}", context={'mod': 'GCSController', 'action': 'NoDataToProcess'})
-            return  # No data to process
+# params = {'symbol': 'BTC'}
+# template = "Raw/{symbol}/data.{file_format}"
+# gcs_paths = gcs_controller.generate_gcs_paths(params, template)
