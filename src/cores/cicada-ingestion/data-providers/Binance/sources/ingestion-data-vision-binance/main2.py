@@ -18,10 +18,8 @@ import zipfile
 env_controller = EnvController()
 
 if __name__ == "__main__":
-    symbols = env_controller.get_yaml_config('symbols')
     initial_start_date = datetime(2024, 9, 28)
     initial_end_date = datetime.today()
-    for symbol in symbols : 
-        
-        binance_data_vision = BinanceDataVision(symbol, env_controller.get_yaml_config('timeframes'))
-        print(binance_data_vision)
+    binance_data_vision = BinanceDataVision()
+    total_files, total_existing_files, total_size = BinanceDataVision.download_and_process_data(2024-9-25)
+    print(total_files, total_existing_files)

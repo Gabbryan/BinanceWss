@@ -9,12 +9,12 @@ api:
 
 symbols:
   - btcusdt
-  - ethusdt
-  - ltcusdt
+
+streams :
+  - aggTrades
 
 timeframes:
   - 1h
-  - 4h
 
-DBV_bucket_name:
- - production_trustia_raw_data
+buckets:
+  binance_data_vision: production_trustia_raw_data
