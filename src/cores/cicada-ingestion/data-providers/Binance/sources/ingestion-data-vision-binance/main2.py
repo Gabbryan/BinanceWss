@@ -23,4 +23,3 @@ if __name__ == "__main__":
     for symbol in symbols : 
         binance_data_vision = BinanceDataVision(symbol, env_controller.get_yaml_config('timeframes'))
         print(binance_data_vision)
-    
