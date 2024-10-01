@@ -1,0 +1,2 @@
+2024-10-01 16:51:42,865 - appLogger - INFO - Initialized GCS client for bucket: None - [mod: GCSClient] - [user: N/A] - [action: Init] - [system: N/A]
+2024-10-01 16:51:42,954 - appLogger - INFO - GCS Controller initialized with bucket: None - [mod: GCSController] - [user: N/A] - [action: Init] - [system: N/A]
