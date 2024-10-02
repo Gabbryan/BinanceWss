@@ -64,6 +64,7 @@ class BinanceDataVision:
         :param start_date: The start date for data download.
         :param end_date: The end date for data download.
         """
+        self.notifications_slack_controller.send_process_start_message()
         symbols = self.symbols
         stream = self.stream
 
@@ -75,7 +76,6 @@ class BinanceDataVision:
             end_date = datetime.today() - timedelta(days=1)
 
         dates = pd.date_range(start_date, end_date, freq="D")
-        self.notifications_slack_controller.send_process_start_message()
 
         tasks_by_year = {}
         for date in dates:
@@ -113,7 +113,7 @@ class BinanceDataVision:
         """
         Process an individual task (can be run in a thread).
 
-        :param task: A single task containing the base URL, symbol, timeframe, and date.
+        :param task: A single task containing the base URL, symbol, timeframe (optional), and date.
         """
         if len(task) == 4:
             base_url, symbol, timeframe, date = task
@@ -128,8 +128,22 @@ class BinanceDataVision:
         self.logger.log_info(f"Processing {symbol} for {formatted_date}.")
         market = self._get_market(base_url)
 
-        params = {'symbol': symbol, 'market': market, 'year': date.year, 'month': date.month, 'day': date.day}
-        template = "Raw/binance-data-vision/historical/{symbol}/{market}/{year}/{month:02d}/{day:02d}/data.parquet"
+        # Prepare GCS paths before downloading any data, including timeframe if applicable
+        params = {
+            'symbol': symbol,
+            'market': market,
+            'year': date.year,
+            'month': date.month,
+            'day': date.day,
+            'stream': self.stream
+        }
+
+        if timeframe:
+            params['timeframe'] = timeframe
+            template = "Raw/binance-data-vision/historical/{symbol}/{market}/{stream}/{timeframe}/{year}/{month:02d}/{day:02d}/data.parquet"
+        else:
+            template = "Raw/binance-data-vision/historical/{symbol}/{market}/{stream}/{year}/{month:02d}/{day:02d}/data.parquet"
+
         gcs_paths = self.GCSController.generate_gcs_paths(params, template)
 
         for gcs_path in gcs_paths:
@@ -137,12 +151,13 @@ class BinanceDataVision:
                 self.logger.log_info(f"File {gcs_path} already exists. Skipping download and upload.")
                 return
 
-        df = self.download_and_extract(base_url, symbol, timeframe, date)
+        # Download and extract data if the file doesn't exist
+        df = self.download_and_extract(base_url, symbol, date, timeframe)
         if df is not None:
             for gcs_path in gcs_paths:
                 self.GCSController.upload_dataframe_to_gcs(df, gcs_path)
 
-    def download_and_extract(self, base_url, symbol, timeframe, date):
+    def download_and_extract(self, base_url, symbol, date, timeframe):
         """
         Download and extract data from a ZIP file.
 
@@ -153,7 +168,7 @@ class BinanceDataVision:
 
         :return: A pandas DataFrame containing the extracted data, or None if an error occurs.
         """
-        formatted_date = date.strftime("%Y-%d-%m")
+        formatted_date = date.strftime("%Y-%m-%d")
         try:
             if timeframe:
                 url = f"{base_url}/{symbol.upper()}-{self.stream}-{timeframe}-{formatted_date}.zip"
