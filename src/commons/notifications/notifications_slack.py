@@ -169,4 +169,4 @@ class NotificationsSlackController:
             f"```{error_message}```\n"
             "But remember, every setback is a setup for a comeback! 💪"
         )
-        self.slack_controller.send_slack_message(f"{self.service_name} Error ⚠️", message, "#ff0000")
+        self.slack_controller.send_slack_message(f"{app_name} Error ⚠️", message, "#ff0000")
