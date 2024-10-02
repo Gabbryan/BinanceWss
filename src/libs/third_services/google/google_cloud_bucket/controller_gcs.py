@@ -110,17 +110,29 @@ class GCSController:
         year_range = parameters.get('year_range', [])
         month_range = parameters.get('month_range', [])
 
+        # Add file format to parameters so it can be used in the template
+        parameters['file_format'] = file_format
+
         # If both year_range and month_range are provided, create paths with year and month placeholders
         if year_range and month_range:
             for year in year_range:
                 for month in month_range:
                     # Ensure year and month are integers
-                    path = template.format(symbol=parameters['symbol'], year=int(year), month=int(month), file_format=file_format)
-                    gcs_paths.append(path)
+                    parameters['year'] = int(year)
+                    parameters['month'] = int(month)
+                    try:
+                        # Use **parameters to fill in any available placeholders
+                        path = template.format(**parameters)
+                        gcs_paths.append(path)
+                    except KeyError as e:
+                        logger.log_error(f"Missing key in parameters for path generation: {e}")
         else:
             # Generate path without year/month if they are not provided
-            path = template.format(symbol=parameters['symbol'], year='', month='', file_format=file_format)
-            gcs_paths.append(path)
+            try:
+                path = template.format(**parameters)
+                gcs_paths.append(path)
+            except KeyError as e:
+                logger.log_error(f"Missing key in parameters for path generation: {e}")
 
         logger.log_info(f"Generated {len(gcs_paths)} GCS paths.", context={'mod': 'GCSController', 'action': 'GeneratePathsComplete'})
         return gcs_paths
