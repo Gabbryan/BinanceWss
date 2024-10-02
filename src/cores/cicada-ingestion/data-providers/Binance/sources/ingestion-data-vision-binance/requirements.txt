@@ -1,9 +1,0 @@
-pandas
-protobuf
-python-dotenv
-Requests
-tqdm
-urllib3
-google-cloud-storage
-schedule
-pyarrow
