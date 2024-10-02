@@ -1,6 +1,6 @@
 import os
 import tempfile
-
+import pandas as pd 
 from src.commons.logs.logging_controller import LoggingController
 from src.libs.third_services.google.google_cloud_bucket.server_gcs import GCSClient
 
@@ -123,18 +123,39 @@ class GCSController:
 
         year_range = parameters.get('year_range', [])
         month_range = parameters.get('month_range', [])
+        day_range = parameters.get('day_range', [])
         parameters['file_format'] = file_format
+
+        end_year = parameters.get('end_year', None)
+        end_month = parameters.get('end_month', None)
+        end_day = parameters.get('end_day', None)
+        
+        end_date = pd.Timestamp(year=end_year, month=end_month, day=end_day)
 
         if year_range and month_range:
             for year in year_range:
                 for month in month_range:
-                    parameters['year'] = int(year)
-                    parameters['month'] = int(month)
-                    try:
-                        path = template.format(**parameters)
-                        gcs_paths.append(path)
-                    except KeyError as e:
-                        logger.log_error(f"Missing key in parameters for path generation: {e}")
+                    for day in day_range:
+                        try:
+                            # Créer une date avec les valeurs actuelles de year, month, day
+                            current_date = pd.Timestamp(year=year, month=month, day=day)
+                            
+                            # Si la date dépasse la end_date, arrêter la génération de chemins
+                            if current_date > end_date:
+                                break
+                            
+                            parameters['year'] = int(year)
+                            parameters['month'] = int(month)
+                            parameters['day'] = int(day)
+
+                            # Générer le chemin GCS
+                            path = template.format(**parameters)
+                            gcs_paths.append(path)
+                        except ValueError:
+                            # Ignorer les dates non valides (comme le 31 février)
+                            continue
+                        except KeyError as e:
+                            logger.log_error(f"Missing key in parameters for path generation: {e}")
         else:
             try:
                 path = template.format(**parameters)
@@ -144,6 +165,8 @@ class GCSController:
 
         logger.log_info(f"Generated {len(gcs_paths)} GCS paths.", context={'mod': 'GCSController', 'action': 'GeneratePathsComplete'})
         return gcs_paths
+
+
 
     def upload_dataframe_to_gcs(self, df, gcs_path, file_format='parquet'):
         """
