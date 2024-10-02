@@ -1,6 +1,6 @@
 Binance-data-vision:
   symbols:
-    - ETCUSDT
+    - APTUSDT
   stream: aggTrades
   timeframes:
     - 1h
