@@ -3,7 +3,6 @@ from datetime import datetime
 from controller_binance_data_vision import BinanceDataVision
 from src.commons.env_manager.env_controller import EnvController
 
-# Initialize the controller for the 'development' environment
 env_controller = EnvController()
 if __name__ == "__main__":
     initial_start_date = datetime(2024, 9, 28)
