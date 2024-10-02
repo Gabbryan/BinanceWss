@@ -1,14 +1,15 @@
-import logging
 import zipfile
 from io import BytesIO
 
 import pandas as pd
 
+from src.commons.logs.logging_controller import LoggingController
+
 
 class ZipController:
 
     def __init__(self):
-        self.logger = logging.getLogger(__name__)
+        self.logger = LoggingController()
 
     def extract_zip_to_dataframe(self, zip_content, file_type='csv', delimiter=',', encoding='utf-8', concat_files=True):
         """
@@ -40,7 +41,7 @@ class ZipController:
                         else:
                             raise ValueError(f"Unsupported file type: {file_type}")
                         dataframes.append(df)
-                        self.logger.info(f"File {file_name} successfully extracted.")
+                        self.logger.log_info(f"File {file_name} successfully extracted.")
 
                 if concat_files:
                     return pd.concat(dataframes, ignore_index=True)
@@ -48,5 +49,5 @@ class ZipController:
                     return dataframes
 
         except zipfile.BadZipFile as e:
-            self.logger.error(f"Error extracting ZIP file: {e}")
+            self.logger.log_error(f"Error extracting ZIP file: {e}")
             raise ValueError(f"Error extracting ZIP file: {e}")

@@ -2,6 +2,9 @@ import logging
 import os
 from logging.handlers import TimedRotatingFileHandler
 
+from src.commons.notifications.notifications_slack import NotificationsSlackController
+
+
 class CustomFormatter(logging.Formatter):
     def format(self, record):
         # Add default values for context keys to avoid KeyError
@@ -21,7 +24,7 @@ class LoggingController:
         log_dir = os.path.dirname(log_file)
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
-
+        self.slack_controller = NotificationsSlackController("Logger")
         # Set up logger
         self.logger = logging.getLogger('appLogger')
         self.logger.setLevel(level)
@@ -74,6 +77,8 @@ class LoggingController:
             adapter.error(message)
         else:
             self.logger.error(message)
+        self.slack_controller.send_error_notification(message)
+
 
     def log_critical(self, message: str, context: dict = None):
         if context:
@@ -81,3 +86,4 @@ class LoggingController:
             adapter.critical(message)
         else:
             self.logger.critical(message)
+            self.slack_controller.send_error_notification(message)
