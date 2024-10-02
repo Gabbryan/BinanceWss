@@ -43,3 +43,19 @@ class GCSClient:
             logger.log_info(f"Deleted file from GCS path: {file_path}", context={'mod': 'GCSClient', 'action': 'DeleteFile'})
         except Exception as e:
             logger.log_error(f"Failed to delete file {file_path} from GCS: {e}", context={'mod': 'GCSClient', 'action': 'DeleteFileError'})
+
+    def file_exists(self, gcs_path):
+        """
+        Check if a file exists in GCS.
+
+        :param gcs_path: The GCS path (blob) to check.
+        :return: True if the file exists, False otherwise.
+        """
+        try:
+            blob = self.bucket.blob(gcs_path)
+            exists = blob.exists()
+            logger.log_info(f"Checked file existence for {gcs_path}: {exists}", context={'mod': 'GCSClient', 'action': 'FileExistsCheck'})
+            return exists
+        except Exception as e:
+            logger.log_error(f"Error checking file existence in GCS: {e}", context={'mod': 'GCSClient', 'action': 'FileExistsError'})
+            return False
