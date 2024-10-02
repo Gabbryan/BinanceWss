@@ -26,7 +26,6 @@ class NotificationsSlackController:
             "Success is just around the corner! 🌟"
         ]
         self.process_start_time = None
-        self.process_history = []  # To store process history
 
     def _get_motivational_quote(self):
         """
@@ -92,16 +91,6 @@ class NotificationsSlackController:
             return False
         return True
 
-    def log_process(self, start_time, end_time):
-        """
-        Logs the process information for historical tracking.
-        """
-        start_time_human = datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S')
-        duration = end_time - start_time
-        self.process_history.append({
-            "start_time": start_time_human,
-            "duration": duration
-        })
 
     def send_process_start_message(self):
         """
@@ -153,9 +142,6 @@ class NotificationsSlackController:
         quote = self._get_motivational_quote()
 
         # Log the process
-        self.log_process(self.process_start_time, time())
-        recent_processes = "\n".join([f"Start: {p['start_time']}, Duration: {p['duration']:.2f}s" for p in self.process_history[-5:]])
-
         message = (
             f"🎉 *{self.service_name}* has completed processing!\n"
             f"🕒 *End Time*: {end_time}\n"
@@ -167,7 +153,6 @@ class NotificationsSlackController:
             f"🔄 *Threads Used*: {thread_count}\n"
             f"💾 *Disk Usage*: {disk_usage}%\n"
             f"🖥️ *System Uptime*: {uptime}\n"
-            f"📜 *Recent Processes*:\n{recent_processes}\n"
             f"Fantastic job, team! {quote}"
         )
         self.slack_controller.send_slack_message(f"{self.service_name} Process Complete 🎉", message, "#36a64f")
