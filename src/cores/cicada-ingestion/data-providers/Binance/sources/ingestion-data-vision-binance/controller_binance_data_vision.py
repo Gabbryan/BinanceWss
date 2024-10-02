@@ -8,7 +8,6 @@ import requests
 from src.commons.env_manager.env_controller import EnvController
 from src.commons.logs.logging_controller import LoggingController
 from src.commons.notifications.notifications_slack import NotificationsSlackController
-from src.commons.syn.server.server import Server
 from src.libs.third_services.google.google_cloud_bucket.controller_gcs import GCSController
 from src.libs.utils.archives.zip_controller import ZipController
 
@@ -19,9 +18,8 @@ class BinanceDataVision:
         self.request_interval = request_interval
         self.EnvController = EnvController()
         self.logger = LoggingController()
-        self.server = Server()
         self.zip_controller = ZipController()
-        self.server.urlServer = self.EnvController.get_yaml_config('Binance-data-vision', 'base_url')
+        self.base_url = self.EnvController.get_yaml_config('Binance-data-vision', 'base_url')
         self.bucket_name = self.EnvController.get_yaml_config('Binance-data-vision', 'bucket')
         self.GCSController = GCSController(self.bucket_name)
         self.symbols = self.EnvController.get_yaml_config('Binance-data-vision', 'symbols')
@@ -39,17 +37,17 @@ class BinanceDataVision:
         for symbol in self.symbols:
             if self.stream == "aggTrades" or self.stream == "trades":
                 self.fetch_urls = [
-                    f"{self.server.urlServer}spot/daily/aggTrades/{symbol}",
-                    f"{self.server.urlServer}futures/um/daily/aggTrades/{symbol}",
+                    f"{self.base_url}spot/daily/aggTrades/{symbol}",
+                    f"{self.base_url}futures/um/daily/aggTrades/{symbol}",
                 ]
             elif self.stream == "klines":
                 self.fetch_urls = [
-                    f"{self.server.urlServer}futures/um/daily/klines/{symbol}",
-                    f"{self.server.urlServer}spot/um/daily/klines/{symbol}",
+                    f"{self.base_url}futures/um/daily/klines/{symbol}",
+                    f"{self.base_url}spot/um/daily/klines/{symbol}",
                 ]
             elif self.stream == "bookDepth":
                 self.fetch_urls = [
-                    f"{self.server.urlServer}futures/um/daily/bookDepth/{symbol}",
+                    f"{self.base_url}futures/um/daily/bookDepth/{symbol}",
                 ]
 
     def download_and_process_data(self, start_date=None, end_date=None):
@@ -128,8 +126,6 @@ class BinanceDataVision:
                 url = f"{base_url}/{symbol.upper()}-{self.stream}-{timeframe}-{formatted_date}.zip"
             else:
                 url = f"{base_url}/{symbol.upper()}-{self.stream}-{formatted_date}.zip"
-                # https://data.binance.vision/data/futures/um/daily/aggTrades/ETCUSDT/ETCUSDT-aggTrades-2024-10-02.zip
-                # https://data.binance.vision/data/futures/um/daily/aggTrades/ETCUSDT/ETCUSDT-aggTrades-2024-09-30.zip
             # Log the download process
             self.logger.log_info(f"Downloading {url}")
             response = requests.get(url, allow_redirects=True)
