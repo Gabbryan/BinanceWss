@@ -5,4 +5,5 @@ Binance-data-vision:
   timeframes:
     - 1h
   bucket: production-trustia-raw-data
+  start_date: 2024-09-20
   base_url: https://data.binance.vision/data/
