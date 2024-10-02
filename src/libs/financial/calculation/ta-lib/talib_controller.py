@@ -6,7 +6,7 @@ import pandas as pd
 from src.commons.logs.logging_controller import LoggingController
 
 # Initialize the logging controller
-logger = LoggingController()
+logger = LoggingController("TAIndicatorController")
 
 class TAIndicatorController:
 

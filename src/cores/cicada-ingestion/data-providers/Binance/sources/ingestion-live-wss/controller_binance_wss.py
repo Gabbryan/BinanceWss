@@ -3,8 +3,8 @@ from src.commons.logs.logging_controller import LoggingController
 from src.libs.third_services.google.pub_sub.controller_pub_sub import ControllerPubSub
 from src.libs.utils.sys.wss.server import WSSClient
 
-env_controller = EnvController("development")
-logger = LoggingController()
+env_controller = EnvController()
+logger = LoggingController("BinanceWSSClient")
 
 
 class BinanceWSSClient(WSSClient):

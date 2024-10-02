@@ -91,7 +91,6 @@ class NotificationsSlackController:
             return False
         return True
 
-
     def send_process_start_message(self):
         """
         Sends a Slack notification when the data process starts, including service name, machine hostname,
@@ -157,15 +156,16 @@ class NotificationsSlackController:
         )
         self.slack_controller.send_slack_message(f"{self.service_name} Process Complete 🎉", message, "#36a64f")
 
-    def send_error_notification(self, error_message):
+    def send_error_notification(self, error_message, app_name):
         """
         Sends a Slack notification if the process encounters an error, including the service name and machine hostname.
 
         :param error_message: The error message to be sent.
+        :param app_name: The name of the application.
         """
         hostname = self._get_hostname()
         message = (
-            f"⚠️ *{self.service_name}* encountered an error on {hostname}:\n"
+            f"⚠️ *{app_name}* encountered an error on {hostname}:\n"
             f"```{error_message}```\n"
             "But remember, every setback is a setup for a comeback! 💪"
         )

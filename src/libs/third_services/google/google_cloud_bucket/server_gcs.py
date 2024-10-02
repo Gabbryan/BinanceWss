@@ -3,7 +3,7 @@ from google.cloud import storage
 from src.commons.logs.logging_controller import LoggingController
 
 # Initialize the logging controller
-logger = LoggingController()
+logger = LoggingController("GCSClient")
 
 class GCSClient:
     def __init__(self, bucket_name):

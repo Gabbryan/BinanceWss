@@ -9,7 +9,7 @@ from src.commons.logs.logging_controller import LoggingController
 class ZipController:
 
     def __init__(self):
-        self.logger = LoggingController()
+        self.logger = LoggingController("ZipController")
 
     def extract_zip_to_dataframe(self, zip_content, file_type='csv', delimiter=',', encoding='utf-8', concat_files=True):
         """

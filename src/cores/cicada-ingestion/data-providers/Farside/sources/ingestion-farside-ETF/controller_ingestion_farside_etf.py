@@ -10,7 +10,7 @@ from src.libs.third_services.farside_data_manager.manager import FarsideDataMana
 from src.libs.third_services.google.google_cloud_bucket.controller_gcs import GCSController
 from src.libs.third_services.slack.controller_slack import SlackMessageController
 
-logger = LoggingController()
+logger = LoggingController("FarsideETFIngestor")
 
 
 class ControllerIngestionFarsideETF:

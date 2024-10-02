@@ -5,7 +5,7 @@ from src.commons.logs.logging_controller import LoggingController
 from src.libs.third_services.google.google_cloud_bucket.server_gcs import GCSClient
 
 # Initialize the logging controller
-logger = LoggingController()
+logger = LoggingController("GCSController")
 
 
 class GCSController:

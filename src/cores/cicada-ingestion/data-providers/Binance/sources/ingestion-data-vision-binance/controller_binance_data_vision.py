@@ -24,7 +24,7 @@ class BinanceDataVision:
         self.request_limit = request_limit
         self.request_interval = request_interval
         self.EnvController = EnvController()
-        self.logger = LoggingController()
+        self.logger = LoggingController("BinanceDataVision")
         self.zip_controller = ZipController()
         self.base_url = self.EnvController.get_yaml_config('Binance-data-vision', 'base_url')
         self.bucket_name = self.EnvController.get_yaml_config('Binance-data-vision', 'bucket')

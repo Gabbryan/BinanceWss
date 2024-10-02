@@ -5,7 +5,7 @@ from google.cloud import pubsub_v1
 from src.commons.logs.logging_controller import LoggingController
 
 # Initialize the logging controller
-logger = LoggingController()
+logger = LoggingController("pub_sub")
 
 
 class ServerPubSub:

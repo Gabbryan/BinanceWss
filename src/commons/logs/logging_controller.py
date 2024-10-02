@@ -14,17 +14,19 @@ class CustomFormatter(logging.Formatter):
         record.system = getattr(record, 'system', 'N/A')
         return super().format(record)
 
+
 class LoggingController:
-    def __init__(self, log_file: str = 'logs/app.log', level: int = logging.INFO, rotation_when: str = 'midnight', interval: int = 1, backup_count: int = 7):
+    def __init__(self, app_name, level: int = logging.INFO, rotation_when: str = 'midnight', interval: int = 1, backup_count: int = 7):
         """
         Initialize the logging controller with log file rotation, ensuring the log directory exists.
         Avoid adding duplicate handlers.
         """
         # Ensure the log directory exists
-        log_dir = os.path.dirname(log_file)
+        log_dir = os.path.dirname(f"logs/{app_name}.log")
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
-        self.slack_controller = NotificationsSlackController("Logger")
+        self.slack_controller = NotificationsSlackController("Logging Controller")
+        self.app_name = app_name
         # Set up logger
         self.logger = logging.getLogger('appLogger')
         self.logger.setLevel(level)
@@ -77,8 +79,7 @@ class LoggingController:
             adapter.error(message)
         else:
             self.logger.error(message)
-        self.slack_controller.send_error_notification(message)
-
+        self.slack_controller.send_error_notification(message, self.app_name)
 
     def log_critical(self, message: str, context: dict = None):
         if context:
