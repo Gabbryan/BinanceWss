@@ -10,6 +10,7 @@ from src.commons.logs.logging_controller import LoggingController
 from src.commons.notifications.notifications_slack import NotificationsSlackController
 from src.libs.third_services.google.google_cloud_bucket.controller_gcs import GCSController
 from src.libs.utils.archives.zip_controller import ZipController
+from src.libs.utils.sys.threading.controller_threading import ThreadController
 
 
 class BinanceDataVision:
@@ -27,13 +28,14 @@ class BinanceDataVision:
                                                          'stream') if self.EnvController.env == 'development' else self.EnvController.get_env(
             'STREAM')
         self.notifications_slack_controller = NotificationsSlackController(f"Binance Data Vision - {self.stream}")
-
-        self.timeframes = self.EnvController.get_yaml_config('Binance-data-vision',
-                                                             'timeframes')
-
+        self.timeframes = self.EnvController.get_yaml_config('Binance-data-vision', 'timeframes')
         self.fetch_urls = []
+        self.thread_controller = ThreadController()
 
     def _define_urls_to_fetch(self):
+        """
+        Define URLs to fetch based on the stream and symbols.
+        """
         for symbol in self.symbols:
             if self.stream == "aggTrades" or self.stream == "trades":
                 self.fetch_urls = [
@@ -51,6 +53,9 @@ class BinanceDataVision:
                 ]
 
     def download_and_process_data(self, start_date=None, end_date=None):
+        """
+        Download and process Binance data between the specified start and end dates.
+        """
         symbols = self.symbols
         stream = self.stream
 
@@ -81,44 +86,68 @@ class BinanceDataVision:
             else:
                 tasks_by_year[year].extend(itertools.product(self.fetch_urls, symbols, [date]))
 
-        self.logger.log_info(f"{sum(len(tasks) for tasks in tasks_by_year.values())} tasks have been generated.")
+        self.logger.log_info(f"{sum(len(tasks) for tasks in tasks_by_year.values())} tasks generated.")
 
-        # Sequential processing, no multi-threading
+        # Process tasks using threads
         for year, tasks in tasks_by_year.items():
-            self.process_tasks(tasks)
+            self.process_tasks_with_threads(tasks)
             self.logger.log_info(f"Year {year} processed successfully.")
 
-        # Send a completion message with the elapsed time
         self.notifications_slack_controller.send_process_end_message()
 
-    def process_tasks(self, tasks):
+    def process_tasks_with_threads(self, tasks):
+        """
+        Process tasks using threading to speed up the process.
+        """
         for task in tasks:
-            if len(task) == 4:
-                base_url, symbol, timeframe, date = task
-            elif len(task) == 3:
-                base_url, symbol, date = task
-                timeframe = None  # No timeframe for this task
-            else:
-                self.logger.log_error(f"Invalid task format: {task}")
-                continue  # Skip tasks with incorrect format
+            # Add tasks as threads to the ThreadController
+            self.thread_controller.add_thread(self, "process_task", task)
 
-            formatted_date = date.strftime("%Y-%m-%d")
-            self.logger.log_info(f"Processing {symbol} for {formatted_date}.")
-            market = self._get_market(base_url)
+        # Start all threads
+        self.thread_controller.start_all()
 
-            # Download and extract data
-            df = self.download_and_extract(base_url, symbol, timeframe, date)
-            if df is not None:
-                # Define GCS path as a single string, not a list
-                params = {'symbol': symbol, 'market': market, 'year': date.year, 'month': date.month, 'day': date.day}
-                template = "Raw/binance-data-vision/historical/{symbol}/{market}/{year}/{month:02d}/{day:02d}/data.parquet"
-                gcs_paths = self.GCSController.generate_gcs_paths(params, template)
+        # Join threads to ensure proper completion
+        self.thread_controller.stop_all()
 
-                # Ensure we are uploading a single string path, not a list
-                for gcs_path in gcs_paths:
-                    self.GCSController.upload_dataframe_to_gcs(df, gcs_path)
+    def process_task(self, task):
+        """
+        Process an individual task (can be run in a thread).
+        """
+        if len(task) == 4:
+            base_url, symbol, timeframe, date = task
+        elif len(task) == 3:
+            base_url, symbol, date = task
+            timeframe = None  # No timeframe for this task
+        else:
+            self.logger.log_error(f"Invalid task format: {task}")
+            return
+
+        formatted_date = date.strftime("%Y-%m-%d")
+        self.logger.log_info(f"Processing {symbol} for {formatted_date}.")
+        market = self._get_market(base_url)
+
+        # Prepare GCS paths before downloading any data
+        params = {'symbol': symbol, 'market': market, 'year': date.year, 'month': date.month, 'day': date.day}
+        template = "Raw/binance-data-vision/historical/{symbol}/{market}/{year}/{month:02d}/{day:02d}/data.parquet"
+        gcs_paths = self.GCSController.generate_gcs_paths(params, template)
+
+        # Check if the file already exists in GCS for all paths
+        for gcs_path in gcs_paths:
+            if self.GCSController.check_file_exists(gcs_path):
+                self.logger.log_info(f"File {gcs_path} already exists. Skipping download and upload.")
+                return  # Skip download and upload if the file exists
+
+        # Download and extract data if the file doesn't exist
+        df = self.download_and_extract(base_url, symbol, timeframe, date)
+        if df is not None:
+            # Upload the dataframe to GCS
+            for gcs_path in gcs_paths:
+                self.GCSController.upload_dataframe_to_gcs(df, gcs_path)
 
     def download_and_extract(self, base_url, symbol, timeframe, date):
+        """
+        Download and extract data from a ZIP file.
+        """
         formatted_date = date.strftime("%Y-%d-%m")
         try:
             # Construct the URL
@@ -126,6 +155,7 @@ class BinanceDataVision:
                 url = f"{base_url}/{symbol.upper()}-{self.stream}-{timeframe}-{formatted_date}.zip"
             else:
                 url = f"{base_url}/{symbol.upper()}-{self.stream}-{formatted_date}.zip"
+
             # Log the download process
             self.logger.log_info(f"Downloading {url}")
             response = requests.get(url, allow_redirects=True)
@@ -142,6 +172,9 @@ class BinanceDataVision:
         return None
 
     def _get_market(self, base_url):
+        """
+        Determine the market (futures or spot) based on the base URL.
+        """
         if "futures" in base_url:
             market = "futures"
         elif "spot" in base_url:
