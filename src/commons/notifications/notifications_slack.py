@@ -96,10 +96,11 @@ class NotificationsSlackController:
         """
         Logs the process information for historical tracking.
         """
+        start_time_human = datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S')
+        duration = end_time - start_time
         self.process_history.append({
-            "start_time": start_time,
-            "end_time": end_time,
-            "duration": end_time - start_time
+            "start_time": start_time_human,
+            "duration": duration
         })
 
     def send_process_start_message(self):
