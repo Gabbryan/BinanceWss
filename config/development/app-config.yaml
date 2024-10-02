@@ -16,6 +16,7 @@ logging:
 
 Ta-lib:
   symbol: BTCUSDT
+  assets: Crypto
   stream: klines
   timeframe: 1h
   bucket: production-trustia-raw-data
@@ -28,3 +29,4 @@ Ta-lib:
           {'name':'rsi', 'params': {'length': 14}} # RSI
           ]
   market: 'futures'
+  broker: 'binance'

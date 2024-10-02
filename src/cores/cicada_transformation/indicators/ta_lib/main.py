@@ -61,4 +61,4 @@ if __name__ == "__main__":
     start_date = env_controller.get_yaml_config('Binance-data-vision', 'start_date')
     end_date = env_controller.get_yaml_config('Binance-data-vision', 'start_date')
     controllerTalib = TransformationTalib()
-    controllerTalib.process_task(start_date=start_date, end_date=end_date)
+    controllerTalib.compute_and_upload_indicators(start_date=start_date, end_date=end_date)

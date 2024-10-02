@@ -167,7 +167,6 @@ class GCSController:
         return gcs_paths
 
 
-
     def upload_dataframe_to_gcs(self, df, gcs_path, file_format='parquet'):
         """
         Save a pandas DataFrame as a Parquet file and upload it to GCS.

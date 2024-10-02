@@ -2,6 +2,7 @@ from typing import List, Dict, Any
 
 import numpy as np
 import pandas as pd
+import pandas_ta as ta
 
 from src.commons.logs.logging_controller import LoggingController
 

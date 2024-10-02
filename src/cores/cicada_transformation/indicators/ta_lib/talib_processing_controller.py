@@ -36,6 +36,8 @@ class TransformationTalib:
         self.bucket_name = self.EnvController.get_yaml_config('Ta-lib', 'bucket')
         self.GCSController = GCSController(self.bucket_name)
         self.symbol = self.EnvController.get_yaml_config('Ta-lib', 'symbol')
+        self.assets = self.EnvController.get_yaml_config('Ta-lib', 'assets')
+        self.broker = self.EnvController.get_yaml_config('Ta-lib', 'broker')
         self.bars = self.EnvController.get_yaml_config('Ta-lib', 'bars')
         self.market = self.EnvController.get_yaml_config('Ta-lib', 'market')
         self.custom_indicators = self.EnvController.get_yaml_config('Ta-lib', 'custom_indicators')
@@ -48,7 +50,7 @@ class TransformationTalib:
         self.ta_indicator_controller = TAIndicatorController()
         self.fs = gcsfs.GCSFileSystem()
 
-    def process_task(self, start_date, end_date, klines=True):
+    def downwload_and_aggregate_klines(self, start_date, end_date, klines=True):
         formatted_start_date = start_date.strftime("%Y-%m-%d")
         formatted_end_date = end_date.strftime("%Y-%m-%d")
         market = self.market
@@ -107,16 +109,66 @@ class TransformationTalib:
                         df = pd.concat([df, df0], ignore_index=True)
             except Exception as e:
                 self.logger.log_error(f"Erreur lors de la lecture du fichier {gcs_path}: {e}")
-                
-        output_path = "/root/Trustia/Cicada-binance/src/cores/cicada_transformation/indicators/ta_lib/data_output.parquet"
 
-        if not df.empty:
-            try:
-                df.to_parquet(output_path, index=False)
-                self.logger.log_info(f"DataFrame exporté avec succès à l'emplacement: {output_path}")
-            except Exception as e:
-                self.logger.log_error(f"Erreur lors de l'exportation du DataFrame en Parquet: {e}")
-        else:
-            self.logger.log_warning("Le DataFrame est vide, aucune donnée à exporter.")
-            
         return df
+    
+    def compute_and_upload_indicators(self, start_date, end_date):
+        """
+        Télécharger et agréger les données de klines, calculer les indicateurs techniques personnalisés, 
+        puis uploader les données enrichies sur GCS.
+        """
+        # Étape 1: Télécharger et agréger les données de klines
+        df = self.downwload_and_aggregate_klines(start_date=start_date, end_date=end_date, klines=True)
+        
+        if df is None or df.empty:
+            self.logger.log_warning("Aucune donnée disponible pour les dates spécifiées.")
+            return None
+        
+        # Étape 2: Initialiser le contrôleur d'indicateurs techniques avec le DataFrame téléchargé
+        self.ta_indicator_controller = TAIndicatorController(df)
+
+        # Étape 3: Calculer les indicateurs personnalisés
+        custom_indicators = self.custom_indicators
+        
+        try:
+            df_with_indicators = self.ta_indicator_controller.compute_custom_indicators(custom_indicators)
+        except Exception as e:
+            self.logger.log_error(f"Erreur lors du calcul des indicateurs: {e}")
+            return None
+
+        # Étape 4: Générer le chemin de sortie pour GCS
+        path_template = "Transformed/{assets}/{broker}/{bars}/{symbol}/{timeframe}/indicators/data_{start_year:02d}_{start_month:02d}_{start_day:02d}_{end_year:02d}_{end_month:02d}_{end_day:02d}"
+        params = {
+            'assets': self.assets,
+            'broker': self.broker,
+            'bars': self.bars,
+            'symbol': self.symbol,
+            'timeframe': self.timeframe,
+            'start_year': start_date.year,
+            'start_month': start_date.month,
+            'start_day': start_date.day,
+            'end_year': end_date.year,
+            'end_month': end_date.month,
+            'end_day': end_date.day
+        }
+
+        # Utilisation de generate_gcs_paths pour créer le chemin de sortie unique
+        gcs_output_paths = self.GCSController.generate_gcs_paths(params, path_template)
+        
+        if len(gcs_output_paths) == 0:
+            self.logger.log_error("Erreur lors de la génération du chemin GCS.")
+            return None
+
+        # Nous prenons le premier chemin généré (celui qui correspond à l'intervalle spécifié)
+        output_gcs_path = gcs_output_paths[0]
+
+        # Étape 5: Uploader le DataFrame avec les indicateurs sur GCS
+        try:
+            self.GCSController.upload_dataframe_to_gcs(df_with_indicators, output_gcs_path, file_format='parquet')
+        except Exception as e:
+            self.logger.log_error(f"Erreur lors de l'upload du DataFrame vers GCS: {e}")
+            return None
+
+        # Étape 6: Retourner le DataFrame enrichi d'indicateurs
+        self.logger.log_info("Calcul des indicateurs terminé avec succès et DataFrame uploadé sur GCS.")
+        return df_with_indicators
