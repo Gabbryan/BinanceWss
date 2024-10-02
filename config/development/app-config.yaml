@@ -1,20 +1,8 @@
-app:
-  name: MyApp Development
-  version: 1.0
-  debug: true
-
-api:
-  base_url: https://dev-api.myapp.com
-  timeout: 30
-
-symbols:
-  - btcusdt
-
-streams :
-  - aggTrades
-
-timeframes:
-  - 1h
-
-buckets:
-  binance_data_vision: production_trustia_raw_data
+Binance-data-vision:
+  symbols:
+    - ETCUSDT
+  stream: aggTrades
+  timeframes:
+    - 1h
+  bucket: production-trustia-raw-data
+  base_url: https://data.binance.vision/data/
