@@ -2,6 +2,7 @@ import logging
 import os
 from logging.handlers import TimedRotatingFileHandler
 
+from src.commons.env_manager.env_controller import EnvController
 from src.commons.notifications.notifications_slack import NotificationsSlackController
 
 
@@ -14,31 +15,41 @@ class CustomFormatter(logging.Formatter):
         record.system = getattr(record, 'system', 'N/A')
         return super().format(record)
 
-
 class LoggingController:
-    def __init__(self, app_name, level: int = logging.INFO, rotation_when: str = 'midnight', interval: int = 1, backup_count: int = 7):
+    def __init__(self, app_name):
         """
         Initialize the logging controller with log file rotation, ensuring the log directory exists.
-        Avoid adding duplicate handlers.
+        Prevent duplicate handlers by checking if they are already added.
         """
         # Ensure the log directory exists
-        log_dir = os.path.dirname(f"logs/{app_name}.log")
+        log_dir = "logs"
+        log_file = os.path.join(log_dir, f"{app_name}.log")
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
+
         self.slack_controller = NotificationsSlackController("Logging Controller")
+        self.EnvController = EnvController()
+        level = self.EnvController.get_yaml_config('logging', 'level')
+        rotation_when = self.EnvController.get_yaml_config('logging', 'rotation_when')
+        interval = self.EnvController.get_yaml_config('logging', 'interval')
+        backup_count = self.EnvController.get_yaml_config('logging', 'backup_count')
+
+
         self.app_name = app_name
-        # Set up logger
-        self.logger = logging.getLogger('appLogger')
+
+        # Set up the logger
+        self.logger = logging.getLogger(app_name)
         self.logger.setLevel(level)
 
         # Prevent the logger from propagating messages to the root logger
         self.logger.propagate = False
 
-        # Check if the logger already has handlers to avoid adding duplicates
-        if not self.logger.hasHandlers():
+        # Check if the logger already has handlers to avoid duplicates
+        if not any(isinstance(handler, TimedRotatingFileHandler) for handler in self.logger.handlers):
             # Custom formatter with context fields
             formatter = CustomFormatter(
-                '%(asctime)s - %(name)s - %(levelname)s - %(message)s - [mod: %(mod)s] - [user: %(user)s] - [action: %(action)s] - [system: %(system)s]')
+                '%(asctime)s - %(name)s - %(levelname)s - %(message)s - [mod: %(mod)s] - [user: %(user)s] - [action: %(action)s] - [system: %(system)s]'
+            )
 
             # Timed Rotating File Handler for log rotation
             rotating_handler = TimedRotatingFileHandler(log_file, when=rotation_when, interval=interval, backupCount=backup_count)
