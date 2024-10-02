@@ -9,15 +9,16 @@ class ThreadController:
     def __init__(self):
         self.threads = []
 
-    def add_thread(self, client, method_name="connect"):
+    def add_thread(self, client, method_name="process_task", *args):
         """
         Add a client to be run in its own thread.
-        :param client: The client (e.g., BinanceWSSClient) whose method will be invoked in the thread.
-        :param method_name: The name of the method to be run in the thread (default is 'connect').
+        :param client: The client (e.g., BinanceDataVision) whose method will be invoked in the thread.
+        :param method_name: The name of the method to be run in the thread (default is 'process_task').
+        :param args: Arguments to pass to the method.
         """
         if hasattr(client, method_name):
             method = getattr(client, method_name)
-            thread = Thread(target=method)
+            thread = Thread(target=method, args=args)
             self.threads.append(thread)
         else:
             raise AttributeError(f"The client does not have a method '{method_name}'")
