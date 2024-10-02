@@ -7,13 +7,23 @@ from dotenv import load_dotenv
 class EnvController:
     """
     Controller for managing environment variables and YAML configurations.
+    Implements a singleton pattern to ensure it's initialized only once.
     """
+    _instance = None  # Singleton instance
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(EnvController, cls).__new__(cls)
+        return cls._instance
 
     def __init__(self, config_base_path: str = None):
         """
         Initialize the controller by specifying the environment and base config path.
         :param config_base_path: The base path where the environment configurations are stored.
         """
+        if hasattr(self, '_initialized') and self._initialized:
+            return  # Skip if already initialized
+
         # Automatically detect the project root if config_base_path is not provided
         if config_base_path is None:
             self.config_base_path = self.find_project_root()
@@ -25,6 +35,8 @@ class EnvController:
         self.load_env_files()
         self.load_yaml_files()
         self.set_google_key_path()
+
+        self._initialized = True  # Mark the controller as initialized
 
     def find_project_root(self):
         """
