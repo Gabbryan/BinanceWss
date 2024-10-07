@@ -10,7 +10,7 @@ from src.commons.env_manager.env_controller import EnvController
 from src.libs.third_services.slack.controller_slack import SlackMessageController
 
 
-class NotificationsSlackController:
+class NotificationsController:
     def __init__(self, service_name):
         """
         Initializes the NotificationsSlackController with relevant context for the data micro-service.
