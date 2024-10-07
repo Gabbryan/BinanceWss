@@ -3,7 +3,7 @@ import os
 from logging.handlers import TimedRotatingFileHandler
 
 from src.commons.env_manager.env_controller import EnvController
-from src.commons.notifications.notifications_slack import NotificationsSlackController
+from src.commons.notifications.notifications_controller import NotificationsController
 
 
 class CustomFormatter(logging.Formatter):
@@ -27,7 +27,7 @@ class LoggingController:
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
 
-        self.slack_controller = NotificationsSlackController("Logging Controller")
+        self.slack_controller = NotificationsController("Logging Controller")
         self.EnvController = EnvController()
         level = self.EnvController.get_yaml_config('logging', 'level')
         rotation_when = self.EnvController.get_yaml_config('logging', 'rotation_when')

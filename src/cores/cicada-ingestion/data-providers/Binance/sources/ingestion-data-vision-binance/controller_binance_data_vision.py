@@ -6,7 +6,7 @@ import requests
 
 from src.commons.env_manager.env_controller import EnvController
 from src.commons.logs.logging_controller import LoggingController
-from src.commons.notifications.notifications_slack import NotificationsSlackController
+from src.commons.notifications.notifications_controller import NotificationsController
 from src.libs.third_services.google.google_cloud_bucket.controller_gcs import GCSController
 from src.libs.utils.archives.zip_controller import ZipController
 from src.libs.utils.sys.threading.controller_threading import ThreadController
@@ -32,7 +32,7 @@ class BinanceDataVision:
         self.symbols = self.EnvController.get_yaml_config('Binance-data-vision', 'symbols')
         self.stream = self.EnvController.get_yaml_config('Binance-data-vision',
                                                          'stream') if self.EnvController.env == 'development' else self.EnvController.get_env('STREAM')
-        self.notifications_slack_controller = NotificationsSlackController(f"Binance Data Vision - {self.stream}")
+        self.notifications_controller = NotificationsController(f"Binance Data Vision - {self.stream} ({self.EnvController.env})")
         self.timeframes = self.EnvController.get_yaml_config('Binance-data-vision', 'timeframes')
         self.fetch_urls = []
         self.thread_controller = ThreadController()
@@ -64,7 +64,7 @@ class BinanceDataVision:
         :param start_date: The start date for data download.
         :param end_date: The end date for data download.
         """
-        self.notifications_slack_controller.send_process_start_message()
+        self.notifications_controller.send_process_start_message()
         symbols = self.symbols
         stream = self.stream
 
@@ -95,7 +95,7 @@ class BinanceDataVision:
             self.process_tasks_with_threads(tasks)
             self.logger.log_info(f"Year {year} processed successfully.")
 
-        self.notifications_slack_controller.send_process_end_message()
+        self.notifications_controller.send_process_end_message()
 
     def process_tasks_with_threads(self, tasks):
         """
@@ -140,7 +140,8 @@ class BinanceDataVision:
 
         if timeframe:
             params['timeframe'] = timeframe
-            template = "Raw/binance-data-vision/historical/{symbol}/{market}/{stream}/{timeframe}/{year}/{month:02d}/{day:02d}/data.parquet"
+            template = "Raw/binance-data-vision/historical/{symbol}/{market}/bars/{year}/{month:02d}/{day:02d}/{bar}-{timeframe}-data.parquet"
+
         else:
             template = "Raw/binance-data-vision/historical/{symbol}/{market}/{stream}/{year}/{month:02d}/{day:02d}/data.parquet"
 
@@ -202,3 +203,4 @@ class BinanceDataVision:
         else:
             market = "unknown"
         return market
+
