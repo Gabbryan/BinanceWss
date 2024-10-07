@@ -1,11 +1,12 @@
 Binance-data-vision:
   symbols:
-    - APTUSDT
+    - AMBUSDT
   stream: aggTrades
   timeframes:
     - 1h
   bucket: production-trustia-raw-data
   start_date: 2024-09-20
+  end_date: 2024-09-30
   base_url: https://data.binance.vision/data/
 
 logging:
@@ -14,19 +15,17 @@ logging:
   interval: 1
   backup_count: 7
 
-Ta-lib:
+Transformation-talib:
   symbol: BTCUSDT
-  assets: Crypto
+
+
+
+Ta-lib:
   stream: klines
-  timeframe: 1h
   bucket: production-trustia-raw-data
-  bars: time_bars
-  start_date: 2024-01-01
-  end_date: 2024-09-20
+  bar: time_bars
   custom_indicators:  [
           {'name': 'ema', 'params': {'length': 20}},  # Exponential Moving Average
           {'name': 'macd', 'params': {}},  # MACD
           {'name':'rsi', 'params': {'length': 14}} # RSI
           ]
-  market: 'futures'
-  broker: 'binance'
