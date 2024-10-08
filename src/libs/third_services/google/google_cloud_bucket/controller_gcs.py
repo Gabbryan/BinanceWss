@@ -110,6 +110,27 @@ class GCSController:
         except Exception as e:
             logger.log_error(f"Error removing temporary file: {e}", context={'mod': 'GCSController', 'action': 'RemoveTempFileError'})
 
+    def check_file_exists(self, gcs_path):
+        """
+        Check if a file exists in the GCS bucket.
+
+        :param gcs_path: The GCS path to check for file existence.
+        :return: True if the file exists, False otherwise.
+        """
+        try:
+            blobs = list(self.gcs_client.bucket.list_blobs(prefix=gcs_path))
+            file_exists = any(blob.name == gcs_path for blob in blobs)
+
+            if file_exists:
+                logger.log_info(f"File {gcs_path} exists in GCS.", context={'mod': 'GCSController', 'action': 'CheckFileExists'})
+            else:
+                logger.log_info(f"File {gcs_path} does not exist in GCS.", context={'mod': 'GCSController', 'action': 'CheckFileDoesNotExist'})
+
+            return file_exists
+        except Exception as e:
+            logger.log_error(f"Error checking if file exists in GCS: {e}", context={'mod': 'GCSController', 'action': 'CheckFileExistsError'})
+            return False
+
     def upload_dataframe_to_gcs(self, df, gcs_path, file_format='parquet'):
         """
         Save a pandas DataFrame as a Parquet file and upload it to GCS.
