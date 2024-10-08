@@ -7,7 +7,7 @@ networks:
 services:
   spark-master:
     build:
-      context: ../../..
+      context: ../../../..
       dockerfile: ../../../docker/base/spark-master/Dockerfile
     container_name: spark-master
     hostname: spark-master

@@ -12,7 +12,7 @@ volumes:
 services:
   pyspark-app:
     build:
-      context: ../../../..
+      context: ../../../../..
       dockerfile: ../../../../docker/aggTrades/historical/transformation/Dockerfile
     container_name: transformation-pyspark-app
     hostname: transformation-pyspark-app

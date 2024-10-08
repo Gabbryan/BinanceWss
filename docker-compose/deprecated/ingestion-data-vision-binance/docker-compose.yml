@@ -1,7 +1,7 @@
 services:
   ingestion-hist-book-depth:
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ../../docker/cores/ingestion-data-vision-binance/Dockerfile
     volumes:
       - ./../../cores/ingestion-data-vision-Binance/src:/app/
@@ -19,7 +19,7 @@ services:
     command: ["python", "main.py"]
   ingestion-hist-liquidation-snapshot:
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ../../docker/cores/ingestion-data-vision-binance/Dockerfile
     volumes:
       - ./../../cores/ingestion-data-vision-Binance/src:/app/
@@ -37,7 +37,7 @@ services:
     command: ["python", "main.py"]
   ingestion-hist-metrics:
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ../../docker/cores/ingestion-data-vision-binance/Dockerfile
     volumes:
       - ./../../cores/ingestion-data-vision-Binance/src:/app/
@@ -55,7 +55,7 @@ services:
     command: ["python", "main.py"]
   ingestion-hist-agg-trades:
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ../../docker/cores/ingestion-data-vision-binance/Dockerfile
     volumes:
       - ./../../cores/ingestion-data-vision-Binance/src:/app/
@@ -73,7 +73,7 @@ services:
     command: ["python", "main.py"]
   ingestion-hist-trades:
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ../../docker/cores/ingestion-data-vision-binance/Dockerfile
     volumes:
       - ./../../cores/ingestion-data-vision-Binance/src:/app/
@@ -91,7 +91,7 @@ services:
     command: ["python", "main.py"]
   ingestion-hist-book-ticker:
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ../../docker/cores/ingestion-data-vision-binance/Dockerfile
     volumes:
       - ./../../cores/ingestion-data-vision-Binance/src:/app/
@@ -109,7 +109,7 @@ services:
     command: ["python", "main.py"]
   ingestion-hist-klines:
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ../../docker/cores/ingestion-data-vision-binance/Dockerfile
     volumes:
       - ./../../cores/ingestion-data-vision-Binance/src:/app/

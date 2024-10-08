@@ -3,7 +3,7 @@ version: "3.8"
 services:
   ingestion-agg-trades:
     build:
-      context: ../../../..
+      context: ../../../../..
       dockerfile: ../../../../docker/aggTrades/historical/ingestion/Dockerfile
     volumes:
       - ./../../../../cores/aggTrades/historical/ingestion/src:/app

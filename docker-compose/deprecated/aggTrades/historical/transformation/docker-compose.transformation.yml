@@ -13,7 +13,7 @@ volumes:
 services:
   spark-master:
     build:
-      context: ../../../..
+      context: ../../../../..
       dockerfile: ../../../../docker/aggTrades/historical/transformation/Dockerfile
     container_name: spark-master
     hostname: spark-master
@@ -38,7 +38,7 @@ services:
 
   spark-worker:
     build:
-      context: ../../../..
+      context: ../../../../..
       dockerfile: ../../../../docker/aggTrades/historical/transformation/Dockerfile
     hostname: spark-worker
     networks:
@@ -59,7 +59,7 @@ services:
 
   pyspark-app:
     build:
-      context: ../../../..
+      context: ../../../../..
       dockerfile: ../../../../docker/aggTrades/historical/transformation/Dockerfile
     container_name: transformation-pyspark-app
     hostname: transformation-pyspark-app

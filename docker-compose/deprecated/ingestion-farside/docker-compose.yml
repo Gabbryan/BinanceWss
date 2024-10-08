@@ -1,7 +1,7 @@
 services:
   ingestion-farside-hist-etf:
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ../../docker/cores/ingestion-farside/Dockerfile
     volumes:
       - ./../../cores/ingestion-farside-ETF/src:/app/

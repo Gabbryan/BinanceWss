@@ -1,7 +1,7 @@
 services:
   ingestion-agg-trades-live:
     build:
-      context: ../../../..
+      context: ../../../../..
       dockerfile: ../../../../docker/aggTrades/live/ingestion/Dockerfile
     volumes:
       - ./../../../../cores/aggTrades/live/ingestion/config.conf:/app/config.conf
@@ -19,7 +19,7 @@ services:
 
   ingestion-agg-trades-histo:
     build:
-      context: ../../../..
+      context: ../../../../..
       dockerfile: ../../../../docker/aggTrades/historical/ingestion/Dockerfile
     volumes:
       - ./../../../../cores/aggTrades/historical/ingestion/src:/app/

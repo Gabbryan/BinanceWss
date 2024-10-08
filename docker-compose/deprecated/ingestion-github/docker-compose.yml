@@ -1,7 +1,7 @@
 services:
   ingestion-github-hist:
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ../../docker/cores/ingestion-github/Dockerfile
     volumes:
       - ./../../cores/ingestion-github/src:/app/
