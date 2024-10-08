@@ -1,0 +1,8 @@
+auto_mix_prep==0.2.0
+psutil==6.0.0
+python-dotenv==1.0.1
+PyYAML==6.0.1
+PyYAML==6.0.2
+Requests==2.32.3
+Server==0.0.0
+urllib3==1.26.18
