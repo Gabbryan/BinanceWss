@@ -1,6 +1,8 @@
 import os
 import tempfile
 
+import pandas as pd
+
 from src.commons.logs.logging_controller import LoggingController
 from src.libs.third_services.google.google_cloud_bucket.server_gcs import GCSClient
 
@@ -160,3 +162,62 @@ class GCSController:
         finally:
             if temp_file is not None:
                 self._remove_temp_file(temp_file)
+
+    def generate_gcs_paths(self, parameters, template, file_format="parquet"):
+        """
+        Generate GCS paths based on a flexible template.
+
+        :param parameters: A dictionary containing the values to populate the template (e.g., {'symbol': 'BTC', 'year_range': range(2023, 2024)}).
+        :param template: A string template for generating the GCS path. Use placeholders like {symbol}, {year}, {month}, etc.
+        :param file_format: The file format to be used in the path (default is 'parquet').
+        :return: A list of GCS paths with placeholders replaced by the actual parameter values.
+        """
+        logger.log_info(f"Generating GCS paths with template: {template} and parameters: {parameters}",
+                        context={'mod': 'GCSController', 'action': 'GeneratePaths'})
+
+        gcs_paths = []
+
+        year_range = parameters.get('year_range', [])
+        month_range = parameters.get('month_range', [])
+        day_range = parameters.get('day_range', [])
+        parameters['file_format'] = file_format
+
+        end_year = parameters.get('end_year', None) or parameters.get('year', None)
+        end_month = parameters.get('end_month', None) or parameters.get('month', None)
+        end_day = parameters.get('end_day', None) or parameters.get('day', None)
+
+        end_date = pd.Timestamp(year=end_year, month=end_month, day=end_day)
+
+        if year_range and month_range:
+            for year in year_range:
+                for month in month_range:
+                    for day in day_range:
+                        try:
+                            # Créer une date avec les valeurs actuelles de year, month, day
+                            current_date = pd.Timestamp(year=year, month=month, day=day)
+
+                            # Si la date dépasse la end_date, arrêter la génération de chemins
+                            if current_date > end_date:
+                                break
+
+                            parameters['year'] = int(year)
+                            parameters['month'] = int(month)
+                            parameters['day'] = int(day)
+
+                            # Générer le chemin GCS
+                            path = template.format(**parameters)
+                            gcs_paths.append(path)
+                        except ValueError:
+                            # Ignorer les dates non valides (comme le 31 février)
+                            continue
+                        except KeyError as e:
+                            logger.log_error(f"Missing key in parameters for path generation: {e}")
+        else:
+            try:
+                path = template.format(**parameters)
+                gcs_paths.append(path)
+            except KeyError as e:
+                logger.log_error(f"Missing key in parameters for path generation: {e}")
+
+        logger.log_info(f"Generated {len(gcs_paths)} GCS paths.", context={'mod': 'GCSController', 'action': 'GeneratePathsComplete'})
+        return gcs_paths

@@ -9,7 +9,7 @@ class EnvController:
     Controller for managing environment variables and YAML configurations.
     Implements a singleton pattern to ensure it's initialized only once.
     """
-    _instance = None  # Singleton instance
+    _instance = None
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
