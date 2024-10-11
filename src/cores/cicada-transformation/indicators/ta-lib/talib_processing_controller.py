@@ -90,26 +90,18 @@ class TransformationTaLib:
         # Process each (symbol, market, timeframe) group separately
         for (symbol, market, timeframe), file_list in files_by_group.items():
             self.logger.log_info(f"Traitement des données pour {symbol} / {market} / {timeframe}...")
-
-            # Check if the output file already exists
-            start_date, end_date = None, None
-            output_gcs_path = None
-            output_path_template = "/Transformed/{symbol}/{market}/bars/time-bars/{timeframe}/data_{start_year:02d}_{start_month:02d}_{start_day:02d}_{end_year:02d}_{end_month:02d}_{end_day:02d}.parquet"
-
-            existing_files = self.bucket_manager.list_files(f"/Transformed/{symbol}/{market}/bars/time-bars/{timeframe}/")
+            output_path_template = "Transformed/cryptos/{symbol}/{market}/bars/time-bars/{timeframe}/data_{start_year:02d}_{start_month:02d}_{start_day:02d}_{end_year:02d}_{end_month:02d}_{end_day:02d}.parquet"
+            existing_files = self.bucket_manager.list_files(f"Transformed/{symbol}/{market}/bars/time-bars/{timeframe}/")
             if existing_files:
-                # Extract dates from existing filenames and use them to limit the new data
-                last_file = sorted(existing_files)[-1]  # Get the most recent file
+                #   Validate the date process
+                last_file = sorted(existing_files)[-1]
                 match = re.search(r'data_(\d{4})_(\d{2})_(\d{2})_(\d{4})_(\d{2})_(\d{2})\.parquet', last_file)
                 if match:
                     start_year, start_month, start_day, end_year, end_month, end_day = map(int, match.groups())
-                    start_date = datetime(start_year, start_month, start_day)
                     end_date = datetime(end_year, end_month, end_day)
-
                     self.logger.log_info(f"Latest existing file: {last_file}, processing from {end_date + pd.Timedelta(days=1)} onwards.")
             else:
                 self.logger.log_info(f"No existing file found for {symbol}, {market}, {timeframe}. Processing all data.")
-                # Process all available data
 
             # Download and aggregate klines for the new date range
             df = self.download_and_aggregate_klines(file_list)
