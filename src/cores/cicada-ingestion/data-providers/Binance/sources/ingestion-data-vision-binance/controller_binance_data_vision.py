@@ -30,8 +30,7 @@ class BinanceDataVision:
         self.bucket_name = self.EnvController.get_yaml_config('Binance-data-vision', 'bucket')
         self.GCSController = GCSController(self.bucket_name)
         self.symbols = self.EnvController.get_yaml_config('Binance-data-vision', 'symbols')
-        self.stream = self.EnvController.get_yaml_config('Binance-data-vision',
-                                                         'stream') if self.EnvController.env == 'development' else self.EnvController.get_env('STREAM')
+        self.stream = self.EnvController.get_env('STREAM')
         self.notifications_controller = NotificationsController(f"Binance Data Vision - {self.stream} ({self.EnvController.env})")
         self.timeframes = self.EnvController.get_yaml_config('Binance-data-vision', 'timeframes')
         self.fetch_urls = []
@@ -48,10 +47,11 @@ class BinanceDataVision:
                     f"{self.base_url}futures/um/daily/aggTrades/{symbol}",
                 ]
             elif self.stream == "klines":
-                self.fetch_urls = [
-                    f"{self.base_url}futures/um/daily/klines/{symbol}",
-                    f"{self.base_url}spot/um/daily/klines/{symbol}",
-                ]
+                self.fetch_urls = []
+                for timeframe in self.timeframes:
+                    self.fetch_urls.append(f"{self.base_url}futures/um/daily/klines/{symbol}/{timeframe}")
+                    self.fetch_urls.append(f"{self.base_url}spot/um/daily/klines/{symbol}/{timeframe}")
+
             elif self.stream == "bookDepth":
                 self.fetch_urls = [
                     f"{self.base_url}futures/um/daily/bookDepth/{symbol}",
@@ -76,6 +76,7 @@ class BinanceDataVision:
             end_date = datetime.today() - timedelta(days=1)
 
         dates = pd.date_range(start_date, end_date, freq="D")
+
 
         tasks_by_year = {}
         for date in dates:
@@ -137,10 +138,10 @@ class BinanceDataVision:
             'day': date.day,
             'stream': self.stream
         }
-
         if timeframe:
             params['timeframe'] = timeframe
-            template = "Raw/binance-data-vision/historical/{symbol}/{market}/bars/{year}/{month:02d}/{day:02d}/{bar}-{timeframe}-data.parquet"
+            params['bar'] = 'klines'
+            template = "Raw/binance-data-vision/historical/{symbol}/{market}/{stream}/{timeframe}/{year}/{month:02d}/{day:02d}/data.parquet"
 
         else:
             template = "Raw/binance-data-vision/historical/{symbol}/{market}/{stream}/{year}/{month:02d}/{day:02d}/data.parquet"
@@ -172,9 +173,10 @@ class BinanceDataVision:
         formatted_date = date.strftime("%Y-%m-%d")
         try:
             if timeframe:
-                url = f"{base_url}/{symbol.upper()}-{self.stream}-{timeframe}-{formatted_date}.zip"
+                # Corrected URL format without repeating symbol
+                url = f"{base_url}/{symbol.upper()}/{timeframe}/{symbol.upper()}-{timeframe}-{formatted_date}.zip"
             else:
-                url = f"{base_url}/{symbol.upper()}-{self.stream}-{formatted_date}.zip"
+                url = f"{base_url}/{symbol.upper()}/{self.stream}/{symbol.upper()}-{self.stream}-{formatted_date}.zip"
 
             self.logger.log_info(f"Downloading {url}")
             response = requests.get(url, allow_redirects=True)
@@ -203,4 +205,3 @@ class BinanceDataVision:
         else:
             market = "unknown"
         return market
-
