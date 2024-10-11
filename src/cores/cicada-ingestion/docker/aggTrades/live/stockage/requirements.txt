@@ -1,6 +1,0 @@
-boto3==1.28.67
-emoji==2.11.1
-pandas==2.0.0
-python-dotenv==1.0.1
-Requests==2.31.0
-schedule==1.2.1
