@@ -34,6 +34,26 @@ class TransformationTaLib:
             self.logger.log_error(f"Erreur lors de l'extraction des métadonnées à partir du chemin {gcs_path}: {e}")
         return None, None, None
 
+
+    def extract_metadata_from_file(self, file_path):
+        """
+        Extracts the end date from the file path.
+        Assumes the file path contains the date in the format: data_YYYY_MM_DD_YYYY_MM_DD.parquet
+        """
+        try:
+            match = re.search(r'data_(\d{4})_(\d{2})_(\d{2})_(\d{4})_(\d{2})_(\d{2})\.parquet', file_path)
+            if match:
+                # Extract the end date from the file name
+                start_year, start_month, start_day, end_year, end_month, end_day = map(int, match.groups()[3:])
+                end_date = datetime(end_year, end_month, end_day)
+                return end_date
+            else:
+                self.logger.log_warning(f"Impossible d'extraire la date de fin du fichier {file_path}.")
+        except Exception as e:
+            self.logger.log_error(f"Erreur lors de l'extraction des métadonnées à partir du chemin {file_path}: {e}")
+        return None
+
+
     def read_parquet_with_pyarrow(self, file_path):
         try:
             table = pq.read_table(file_path)
