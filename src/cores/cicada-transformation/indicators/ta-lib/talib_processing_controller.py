@@ -38,20 +38,33 @@ class TransformationTaLib:
     def extract_metadata_from_file(self, file_path):
         """
         Extracts the end date from the file path.
-        Assumes the file path contains the date in the format: data_YYYY_MM_DD_YYYY_MM_DD.parquet
+        Supports two formats:
+        1. data_YYYY_MM_DD_YYYY_MM_DD.parquet (where the date is in the filename)
+        2. Raw/binance-data-vision/historical/ADAUSDT/futures/klines/1h/YYYY/MM/DD/data.parquet
         """
         try:
+            # Essayer de capturer la date avec le format complet data_YYYY_MM_DD_YYYY_MM_DD.parquet
             match = re.search(r'data_(\d{4})_(\d{2})_(\d{2})_(\d{4})_(\d{2})_(\d{2})\.parquet', file_path)
             if match:
-                # Extract the end date from the file name
-                start_year, start_month, start_day, end_year, end_month, end_day = map(int, match.groups()[3:])
+                # Extraire la date de fin (les trois dernières valeurs du match)
+                start_year, start_month, start_day, end_year, end_month, end_day = map(int, match.groups())
                 end_date = datetime(end_year, end_month, end_day)
                 return end_date
-            else:
-                self.logger.log_warning(f"Impossible d'extraire la date de fin du fichier {file_path}.")
+
+            # Si le premier format échoue, essayer d'extraire la date du chemin du fichier
+            match = re.search(r'(\d{4})/(\d{2})/(\d{2})/data\.parquet', file_path)
+            if match:
+                # Extraire la date à partir du chemin (ex: /2020/04/26/)
+                year, month, day = map(int, match.groups())
+                end_date = datetime(year, month, day)
+                return end_date
+
+            # Si aucun format ne correspond, logguer un avertissement
+            self.logger.log_warning(f"Impossible d'extraire la date de fin du fichier {file_path}. Format attendu: data_YYYY_MM_DD_YYYY_MM_DD.parquet ou chemin contenant /YYYY/MM/DD/data.parquet")
+            return None
         except Exception as e:
             self.logger.log_error(f"Erreur lors de l'extraction des métadonnées à partir du chemin {file_path}: {e}")
-        return None
+            return None
 
 
     def read_parquet_with_pyarrow(self, file_path):
@@ -67,6 +80,7 @@ class TransformationTaLib:
         except Exception as e:
             self.logger.log_error(f"Error reading parquet file with pyarrow: {e}")
             return pd.DataFrame()
+
 
     def download_and_aggregate_klines(self, gcs_paths):
         df_combined = pd.DataFrame()
@@ -110,46 +124,132 @@ class TransformationTaLib:
         # Process each (symbol, market, timeframe) group separately
         for (symbol, market, timeframe), file_list in files_by_group.items():
             self.logger.log_info(f"Traitement des données pour {symbol} / {market} / {timeframe}...")
-            output_path_template = "Transformed/cryptos/{symbol}/{market}/bars/time-bars/{timeframe}/data_{start_year:02d}_{start_month:02d}_{start_day:02d}_{end_year:02d}_{end_month:02d}_{end_day:02d}.parquet"
-            existing_files = self.bucket_manager.list_files(f"Transformed/{symbol}/{market}/bars/time-bars/{timeframe}/")
+
+            # Partie 1 : Gérer les chemins de sortie (output paths)
+            output_path_prefix = f"Transformed/cryptos/{symbol}/{market}/bars/time-bars/{timeframe}/"
+            existing_files = self.bucket_manager.list_files(output_path_prefix)
+
+            latest_end_date = None
+            df_existing = pd.DataFrame()
+
             if existing_files:
-                #   Validate the date process
+                self.logger.log_info(f"File already exists for {symbol} / {market} / {timeframe}...")
+                # Extraire la date de fin du dernier fichier de sortie (output)
                 last_file = sorted(existing_files)[-1]
-                match = re.search(r'data_(\d{4})_(\d{2})_(\d{2})_(\d{4})_(\d{2})_(\d{2})\.parquet', last_file)
-                if match:
-                    start_year, start_month, start_day, end_year, end_month, end_day = map(int, match.groups())
-                    end_date = datetime(end_year, end_month, end_day)
-                    self.logger.log_info(f"Latest existing file: {last_file}, processing from {end_date + pd.Timedelta(days=1)} onwards.")
+                latest_end_date = self.extract_metadata_from_file(last_file)
+                
+                # Charger les données existantes dans un DataFrame
+                df_existing = self.bucket_manager.load_gcs_file_to_dataframe(last_file, file_format='parquet')
+                
+                # Si la date de fin est aujourd'hui, vérifier les indicateurs
+                if latest_end_date and latest_end_date.date() == datetime.now().date():
+                    self.logger.log_info(f"File for {symbol} / {market} / {timeframe}... is complete, checking for indicators")
+                    missing_indicators = [ind['name'] for ind in self.custom_indicators if ind['name'] not in df_existing.columns]
+                    
+                    if not missing_indicators:
+                        self.logger.log_info(f"Tous les indicateurs sont déjà présents dans {last_file} pour {symbol}/{market}/{timeframe}.")
+                        continue  # Aucun calcul supplémentaire n'est nécessaire
+                    else:
+                        self.logger.log_info(f"Indicateurs manquants pour {symbol}/{market}/{timeframe}: {missing_indicators}")
+
+                        # Calculer les indicateurs manquants
+                        ta_indicator_controller = TAIndicatorController(df_existing)
+
+                        try:
+                            df_with_missing_indicators = ta_indicator_controller.compute_custom_indicators(
+                                [{'name': ind_name} for ind_name in missing_indicators]
+                            )
+                        except Exception as e:
+                            self.logger.log_error(f"Erreur lors du calcul des indicateurs manquants pour {symbol} / {market} / {timeframe}: {e}")
+                            continue
+
+                        # Supprimer les colonnes en double avant de sauvegarder
+                        df_with_missing_indicators = df_with_missing_indicators.loc[:, ~df_with_missing_indicators.columns.duplicated()]
+
+                        # Sauvegarder la DataFrame mise à jour avec les indicateurs manquants
+                        output_gcs_path = last_file  # On réécrit sur le fichier existant
+                        try:
+                            self.bucket_manager.upload_dataframe_to_gcs(df_with_missing_indicators, output_gcs_path, file_format='parquet')
+                            self.logger.log_info(f"Uploaded DataFrame with missing indicators for {symbol} / {market} / {timeframe} to GCS.")
+                        except Exception as e:
+                            self.logger.log_error(f"Erreur lors de l'upload des indicateurs manquants vers GCS pour {symbol} / {market} / {timeframe}: {e}")
+                        continue  # On passe au prochain groupe
+                
+                elif latest_end_date:
+                    self.logger.log_info(f"File for {symbol} / {market} / {timeframe}... is incomplete")
+                    start_date = latest_end_date + pd.Timedelta(days=1)
+                    # Filtrer les fichiers en fonction du timeframe et symbol correct
+                    file_list = [file for file in gcs_files if self._extract_metadata_from_path(file) 
+                                and self._extract_metadata_from_path(file)[0] == symbol  # Vérification du symbol
+                                and self._extract_metadata_from_path(file)[2] == timeframe  # Vérification du timeframe
+                                and self.extract_metadata_from_file(file) >= start_date]
+
+                    df_new = self.download_and_aggregate_klines(file_list)
+                    if df_new.empty:
+                        self.logger.log_warning(f"Aucune donnée disponible pour {symbol}, {market}, {timeframe}.")
+                        continue
+                    df_combined = pd.concat([df_existing, df_new], ignore_index=True)
+                    
+                    # Suppression des colonnes d'indicateurs avant recalcul
+                    indicators_to_remove = [ind['name'] for ind in self.custom_indicators if ind['name'] in df_combined.columns]
+                    if indicators_to_remove:
+                        self.logger.log_info(f"Removing existing indicator columns: {indicators_to_remove}")
+                        df_combined = df_combined.drop(columns=indicators_to_remove, errors='ignore')
+                        
+                    # Calculer les indicateurs techniques personnalisés pour toutes les données
+                    ta_indicator_controller = TAIndicatorController(df_combined)
+
+                    try:
+                        df_with_indicators = ta_indicator_controller.compute_custom_indicators(self.custom_indicators)
+                    except Exception as e:
+                        self.logger.log_error(f"ERREUR lors du calcul des indicateurs pour {symbol} / {market} / {timeframe}: {e}")
+                        continue
+                    
+                    # Supprimer les colonnes en double après le recalcul
+                    df_with_indicators = df_with_indicators.loc[:, ~df_with_indicators.columns.duplicated()]
+                    
+                    # 1. Calculer la nouvelle plage de dates
+                    start_date = df_combined['timestamp'].min()
+                    end_date = df_combined['timestamp'].max()
+                    
+                    # 2. Générer un nouveau chemin basé sur la nouvelle plage de dates, en gardant le même format
+                    output_gcs_path = f"Transformed/cryptos/{symbol}/{market}/bars/time-bars/{timeframe}/data_{start_date:%Y_%m_%d}_{end_date:%Y_%m_%d}.parquet"
+
+                    # 3. Supprimer le fichier existant avant de sauvegarder le nouveau fichier
+                    try:
+                        # Vérifier si le fichier existe déjà dans GCS
+                        if self.bucket_manager.check_file_exists(output_gcs_path):
+                            self.logger.log_info(f"Fichier existant trouvé : {last_file}. Suppression du fichier avant de réécrire.")
+                            self.bucket_manager.delete_file(last_file)
+                        
+                        # Réécriture du fichier avec le nouveau nom basé sur les dates
+                        self.bucket_manager.upload_dataframe_to_gcs(df_with_indicators, output_gcs_path, file_format='parquet')
+                        self.logger.log_info(f"Uploaded DataFrame with complete indicators for {symbol} / {market} / {timeframe} to GCS at {output_gcs_path}.")
+                    except Exception as e:
+                        self.logger.log_error(f"Erreur lors de l'upload du DataFrame vers GCS pour {symbol} / {market} / {timeframe}: {e}")
+                    continue  
+            
             else:
-                self.logger.log_info(f"No existing file found for {symbol}, {market}, {timeframe}. Processing all data.")
+                self.logger.log_info(f"No existing file for {symbol} / {market} / {timeframe}...")
+                df = self.download_and_aggregate_klines(file_list)
+                ta_indicator_controller = TAIndicatorController(df)
 
-            # Download and aggregate klines for the new date range
-            df = self.download_and_aggregate_klines(file_list)
-            if df.empty:
-                self.logger.log_warning(f"Aucune donnée disponible pour {symbol}, {market}, {timeframe}.")
-                continue
+                try:
+                    df_with_indicators = ta_indicator_controller.compute_custom_indicators(self.custom_indicators)
+                except Exception as e:
+                    self.logger.log_error(f"ERREUR lors du calcul des indicateurs pour {symbol} / {market} / {timeframe}: {e}")
+                    continue
 
-            # Compute custom technical indicators
-            ta_indicator_controller = TAIndicatorController(df)
-            custom_indicators = self.custom_indicators
+                # Supprimer les colonnes en double après calcul
+                df_with_indicators = df_with_indicators.loc[:, ~df_with_indicators.columns.duplicated()]
 
-            try:
-                df_with_indicators = ta_indicator_controller.compute_custom_indicators(custom_indicators)
-            except Exception as e:
-                self.logger.log_error(f"Erreur lors du calcul des indicateurs pour {symbol} / {market} / {timeframe}: {e}")
-                continue
+                # Générer le chemin de sortie basé sur la nouvelle plage de dates
+                start_date = df_combined['timestamp'].min()
+                end_date = df_combined['timestamp'].max()
+                output_gcs_path = f"Transformed/cryptos/{symbol}/{market}/bars/time-bars/{timeframe}/data_{start_date:%Y_%m_%d}_{end_date:%Y_%m_%d}.parquet"
 
-            # Generate output path based on the new date range
-            start_date = df['timestamp'].min()
-            end_date = df['timestamp'].max()
-            output_gcs_path = output_path_template.format(
-                symbol=symbol, market=market, timeframe=timeframe,
-                start_year=start_date.year, start_month=start_date.month, start_day=start_date.day,
-                end_year=end_date.year, end_month=end_date.month, end_day=end_date.day
-            )
-
-            try:
-                self.bucket_manager.upload_dataframe_to_gcs(df_with_indicators, output_gcs_path, file_format='parquet')
-                self.logger.log_info(f"Uploaded DataFrame for {symbol} / {market} / {timeframe} to GCS.")
-            except Exception as e:
-                self.logger.log_error(f"Erreur lors de l'upload du DataFrame vers GCS pour {symbol} / {market} / {timeframe}: {e}")
+                try:
+                    self.bucket_manager.upload_dataframe_to_gcs(df_with_indicators, output_gcs_path, file_format='parquet')
+                    self.logger.log_info(f"Uploaded DataFrame for {symbol} / {market} / {timeframe} to GCS.")
+                except Exception as e:
+                    self.logger.log_error(f"Erreur lors de l'upload du DataFrame vers GCS pour {symbol} / {market} / {timeframe}: {e}")

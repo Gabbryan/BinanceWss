@@ -40,22 +40,18 @@ class BinanceDataVision:
         """
         Define the URLs to fetch based on the selected stream and available symbols.
         """
+        self.fetch_urls = []  # Initialiser une liste vide pour accumuler toutes les URLs
         for symbol in self.symbols:
             if self.stream == "aggTrades" or self.stream == "trades":
-                self.fetch_urls = [
-                    f"{self.base_url}spot/daily/aggTrades/{symbol}",
-                    f"{self.base_url}futures/um/daily/aggTrades/{symbol}",
-                ]
+                self.fetch_urls.append(f"{self.base_url}spot/daily/aggTrades/{symbol}")
+                self.fetch_urls.append(f"{self.base_url}futures/um/daily/aggTrades/{symbol}")
             elif self.stream == "klines":
-                self.fetch_urls = []
                 for timeframe in self.timeframes:
                     self.fetch_urls.append(f"{self.base_url}futures/um/daily/klines/{symbol}/{timeframe}")
-                    self.fetch_urls.append(f"{self.base_url}spot/um/daily/klines/{symbol}/{timeframe}")
-
+                    self.fetch_urls.append(f"{self.base_url}spot/daily/klines/{symbol}/{timeframe}")
             elif self.stream == "bookDepth":
-                self.fetch_urls = [
-                    f"{self.base_url}futures/um/daily/bookDepth/{symbol}",
-                ]
+                self.fetch_urls.append(f"{self.base_url}futures/um/daily/bookDepth/{symbol}")
+
 
     def download_and_process_data(self, start_date=None, end_date=None):
         """
@@ -65,9 +61,8 @@ class BinanceDataVision:
         :param end_date: The end date for data download.
         """
         self.notifications_controller.send_process_start_message()
-        symbols = self.symbols
-        stream = self.stream
 
+        # Définir les URL à partir des symboles et des timeframes
         self._define_urls_to_fetch()
 
         if start_date is None:
@@ -77,18 +72,24 @@ class BinanceDataVision:
 
         dates = pd.date_range(start_date, end_date, freq="D")
 
-
         tasks_by_year = {}
         for date in dates:
             year = date.year
             if year not in tasks_by_year:
                 tasks_by_year[year] = []
-            if stream == "klines":
-                tasks_by_year[year].extend(
-                    itertools.product(self.fetch_urls, symbols, self.timeframes, [date])
-                )
+
+            # Créer des tâches spécifiques aux symboles et aux timeframes
+            if self.stream == "klines":
+                for symbol in self.symbols:
+                    for timeframe in self.timeframes:
+                        for base_url in self.fetch_urls:
+                            if symbol in base_url:  # S'assurer que l'URL contient le bon symbole
+                                tasks_by_year[year].append((base_url, symbol, timeframe, date))
             else:
-                tasks_by_year[year].extend(itertools.product(self.fetch_urls, symbols, [date]))
+                for symbol in self.symbols:
+                    for base_url in self.fetch_urls:
+                        if symbol in base_url:  # Vérifier que l'URL correspond bien au symbole
+                            tasks_by_year[year].append((base_url, symbol, date))
 
         self.logger.log_info(f"{sum(len(tasks) for tasks in tasks_by_year.values())} tasks generated.")
 
@@ -97,6 +98,7 @@ class BinanceDataVision:
             self.logger.log_info(f"Year {year} processed successfully.")
 
         self.notifications_controller.send_process_end_message()
+
 
     def process_tasks_with_threads(self, tasks):
         """
@@ -172,10 +174,13 @@ class BinanceDataVision:
         """
         formatted_date = date.strftime("%Y-%m-%d")
         try:
-            if timeframe:
-                # Corrected URL format without repeating symbol
-                url = f"{base_url}/{symbol.upper()}/{timeframe}/{symbol.upper()}-{timeframe}-{formatted_date}.zip"
+            # Correct URL format to match the expected Binance data format
+            if "klines" in base_url and timeframe:
+                print(base_url)
+                # URL for klines data with the correct format, without repeating symbol/timeframe
+                url = f"{base_url}/{symbol.upper()}-{timeframe}-{date.strftime('%Y-%m-%d')}.zip"
             else:
+                # URL for other streams (e.g., aggTrades, trades, etc.)
                 url = f"{base_url}/{symbol.upper()}/{self.stream}/{symbol.upper()}-{self.stream}-{formatted_date}.zip"
 
             self.logger.log_info(f"Downloading {url}")
@@ -189,6 +194,8 @@ class BinanceDataVision:
         except ValueError as e:
             self.logger.log_error(f"Data extraction error for {url}: {e}")
         return None
+
+
 
     def _get_market(self, base_url):
         """
