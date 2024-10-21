@@ -8,13 +8,15 @@ env_controller = EnvController()
 if __name__ == "__main__":
     # Initialize the controller
     thread_controller = ThreadController()
-    symbols = env_controller.get_yaml_config('symbols')
+    symbols = env_controller.get_yaml_config('wss-binance', 'symbols')
+    streams = env_controller.get_yaml_config('wss-binance', 'streams')
     # Create and add WebSocket clients for each symbol
     for symbol in symbols:
-        binance_client = BinanceWSSClient(symbol, stream=env_controller.get_env('stream', 'trade'))
+        for stream in streams:
+            binance_client = BinanceWSSClient(symbol, stream=stream)
 
-        # Adding the client and specifying 'connect' method to run in thread
-        thread_controller.add_thread(binance_client, method_name="connect")
+            # Adding the client and specifying 'connect' method to run in thread
+            thread_controller.add_thread(binance_client, method_name="connect")
 
     # Start all threads (each running a WebSocket client)
     thread_controller.start_all()
