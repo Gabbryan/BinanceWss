@@ -13,14 +13,14 @@ from src.libs.third_services.slack.controller_slack import SlackMessageControlle
 class NotificationsController:
     def __init__(self, service_name):
         """
-        Initializes the NotificationsSlackController with relevant context for the data micro-service.
+        Initializes the NotificationsController with relevant context for the data micro-service.
         """
         self.EnvController = EnvController()
         self.slack_controller = SlackMessageController(self.EnvController.get_env("WEBHOOK_URL"))
         self.service_name = service_name
         self.motivational_quotes = [
             "Great things take time! 🌱",
-            "Keep up the awesome work, team! 💪",
+            "Keep up the awesome work! 💪",
             "Every step forward counts! 🚀",
             "Together, we achieve more! 🎯",
             "Success is just around the corner! 🌟"
@@ -75,21 +75,19 @@ class NotificationsController:
 
     def _get_system_uptime(self):
         """
-        Returns the system uptime in human-readable format (hours and minutes).
+        Returns the system uptime in a human-readable format (hours and minutes).
         """
         uptime_seconds = time() - psutil.boot_time()
         uptime_hours, remainder = divmod(uptime_seconds, 3600)
         uptime_minutes, _ = divmod(remainder, 60)
-        return f"{int(uptime_hours)} hours, {int(uptime_minutes)} minutes"
+        return f"{int(uptime_hours)}h {int(uptime_minutes)}m"
 
     def _perform_health_check(self):
         """
         Performs a simple health check, returning a boolean to indicate if the system is healthy.
         """
         system_stats = self._get_system_stats()
-        if system_stats['cpu'] > 90 or system_stats['memory'] > 90:
-            return False
-        return True
+        return system_stats['cpu'] <= 90 and system_stats['memory'] <= 90
 
     def send_process_start_message(self):
         """
@@ -104,23 +102,23 @@ class NotificationsController:
         thread_count = self._get_thread_count()
         disk_usage = self._get_disk_usage()
         uptime = self._get_system_uptime()
-        health_status = "Healthy" if self._perform_health_check() else "Warning: High CPU or Memory Usage"
+        health_status = "Healthy ✅" if self._perform_health_check() else "Warning ⚠️ High CPU or Memory Usage"
         quote = self._get_motivational_quote()
 
         message = (
-            f"🚀 *{self.service_name}* has started processing!\n"
-            f"🔧 *Process ID*: {process_id}\n"
+            f"🚀 *{self.service_name}* processing has started!\n"
+            f"🔧 *Process ID*: `{process_id}`\n"
             f"🕒 *Start Time*: {start_time}\n"
-            f"💻 *Running on*: {hostname}\n"
+            f"💻 *Host*: `{hostname}`\n"
             f"💽 *CPU Usage*: {system_stats['cpu']}%\n"
             f"🧠 *Memory Usage*: {system_stats['memory']}%\n"
-            f"🔄 *Threads Used*: {thread_count}\n"
+            f"🔄 *Threads*: {thread_count}\n"
             f"💾 *Disk Usage*: {disk_usage}%\n"
             f"🖥️ *System Uptime*: {uptime}\n"
             f"🩺 *System Health*: {health_status}\n"
-            f"🔍 Stay tuned for updates. {quote}"
+            f"💬 _\"{quote}\"_"
         )
-        self.slack_controller.send_slack_message(f"{self.service_name} Process Start 🚀", message, "#36a64f")
+        self.slack_controller.send_slack_message(f"{self.service_name} Process Started 🚀", message, "#36a64f")
 
     def send_process_end_message(self):
         """
@@ -135,24 +133,21 @@ class NotificationsController:
         disk_usage = self._get_disk_usage()
         uptime = self._get_system_uptime()
         threshold_minutes = 30  # Set the threshold for process duration
-        warning = ""
-        if elapsed_time / 60 > threshold_minutes:
-            warning = "⚠️ *Warning*: The process took longer than expected."
+        warning = "⚠️ *Warning*: Process duration exceeded expectations." if elapsed_time / 60 > threshold_minutes else ""
         quote = self._get_motivational_quote()
 
-        # Log the process
         message = (
-            f"🎉 *{self.service_name}* has completed processing!\n"
+            f"🎉 *{self.service_name}* processing is complete!\n"
             f"🕒 *End Time*: {end_time}\n"
-            f"⏳ *Total Running Time*: {elapsed_time / 60:.2f} minutes\n"
+            f"⏳ *Duration*: {elapsed_time / 60:.2f} minutes\n"
             f"{warning}\n"
-            f"💻 *Processed on*: {hostname}\n"
+            f"💻 *Host*: `{hostname}`\n"
             f"💽 *CPU Usage*: {system_stats['cpu']}%\n"
             f"🧠 *Memory Usage*: {system_stats['memory']}%\n"
-            f"🔄 *Threads Used*: {thread_count}\n"
+            f"🔄 *Threads*: {thread_count}\n"
             f"💾 *Disk Usage*: {disk_usage}%\n"
             f"🖥️ *System Uptime*: {uptime}\n"
-            f"Fantastic job, team! {quote}"
+            f"💬 _\"{quote}\"_"
         )
         self.slack_controller.send_slack_message(f"{self.service_name} Process Complete 🎉", message, "#36a64f")
 
@@ -165,7 +160,7 @@ class NotificationsController:
         """
         hostname = self._get_hostname()
         message = (
-            f"⚠️ *{app_name}* encountered an error on {hostname}:\n"
+            f"⚠️ *{app_name}* encountered an error on `{hostname}`:\n"
             f"```{error_message}```\n"
             "But remember, every setback is a setup for a comeback! 💪"
         )
