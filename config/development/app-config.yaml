@@ -12,7 +12,11 @@ Binance-data-vision:
     - TONUSDT
   stream: klines
   timeframes:
+    - 4h
     - 1h
+    - 30m
+    - 15m
+    - 5m
   bucket: production-trustia-raw-data
   start_date: 2024-01-01
   end_date:
