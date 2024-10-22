@@ -19,6 +19,8 @@ class BinanceWSSClient(WSSClient):
     """
 
     def __init__(self, symbol: str, stream="trade", spot_market=True, testnet=False):
+        self.spot_market = spot_market
+        self.testnet = testnet
         if spot_market:
             if not testnet:
                 self.BINANCE_WSS_BASE_URL = "wss://stream.binance.com:9443/ws/"
@@ -93,8 +95,12 @@ class BinanceWSSClient(WSSClient):
         hour = timestamp.hour
         minute = timestamp.minute
 
-        # Define the GCS path with partitions down to the minute level
-        gcs_path = (f"Raw/WSS-binance/{self.symbol}/kline/{interval}/{year}/{month}/{day}/"
+        # Determine market type and testnet status for the GCS path
+        market_type = 'spot' if self.spot_market else 'futures'
+        environment = 'testnet' if self.testnet else 'mainnet'
+
+        # Define the GCS path with partitions down to the minute level, including market and environment
+        gcs_path = (f"Raw/WSS-binance/{market_type}/{environment}/{self.symbol}/kline/{interval}/{year}/{month}/{day}/"
                     f"{hour}/{minute}/kline_data.parquet")
 
         try:
