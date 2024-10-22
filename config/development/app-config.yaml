@@ -1,24 +1,13 @@
 Binance-data-vision:
   symbols:
-    - AVAXUSDT
-    - ADAUSDT
     - BTCUSDT
     - ETHUSDT
-    - TRXUSDT
-    - SOLUSDT
-    - XRPUSDT
-    - DOGEUSDT
-    - BNBUSDT
-    - TONUSDT
   stream: klines
   timeframes:
     - 4h
-    - 1h
     - 30m
-    - 15m
-    - 5m
   bucket: production-trustia-raw-data
-  start_date: 2024-01-01
+  start_date: 2023-01-01
   end_date:
   base_url: https://data.binance.vision/data/
 

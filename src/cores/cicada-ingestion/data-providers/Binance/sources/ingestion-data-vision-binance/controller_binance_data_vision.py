@@ -78,17 +78,17 @@ class BinanceDataVision:
             if year not in tasks_by_year:
                 tasks_by_year[year] = []
 
-        # Créer des tâches spécifiques aux symboles et aux timeframes
-        if self.stream == "klines":
-            for symbol in self.symbols:
-                for timeframe in self.timeframes:
-                    for base_url in self.fetch_urls:
-                        if symbol in base_url:  # S'assurer que l'URL contient le bon symbole
-                            # Extraire la dernière partie de l'URL après le symbole (c'est-à-dire le timeframe)
-                            url_timeframe = base_url.split('/')[-1]
-                            if url_timeframe == timeframe:  # Comparer exactement les timeframes
-                                tasks_by_year[year].append((base_url, symbol, timeframe, date))
-        else:
+            # Créer des tâches spécifiques aux symboles et aux timeframes
+            if self.stream == "klines":
+                for symbol in self.symbols:
+                    for timeframe in self.timeframes:
+                        for base_url in self.fetch_urls:
+                            if symbol in base_url:  # S'assurer que l'URL contient le bon symbole
+                                # Extraire la dernière partie de l'URL après le symbole (c'est-à-dire le timeframe)
+                                url_timeframe = base_url.split('/')[-1]
+                                if url_timeframe == timeframe:  # Comparer exactement les timeframes
+                                    tasks_by_year[year].append((base_url, symbol, timeframe, date))
+            else:
                 for symbol in self.symbols:
                     for base_url in self.fetch_urls:
                         if symbol in base_url:  # Vérifier que l'URL correspond bien au symbole
@@ -97,8 +97,6 @@ class BinanceDataVision:
         self.logger.log_info(f"{sum(len(tasks) for tasks in tasks_by_year.values())} tasks generated.")
 
         for year, tasks in tasks_by_year.items():
-            print("YEARRRRRRRRR", year)
-            print("TASKKKKKKKKKK", tasks)
             self.process_tasks_with_threads(tasks)
             self.logger.log_info(f"Year {year} processed successfully.")
 
@@ -199,7 +197,6 @@ class BinanceDataVision:
         except ValueError as e:
             self.logger.log_error(f"Data extraction error for {url}: {e}")
         return None
-
 
 
     def _get_market(self, base_url):
