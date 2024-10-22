@@ -133,30 +133,34 @@ class GCSController:
             logger.log_error(f"Error checking if file exists in GCS: {e}", context={'mod': 'GCSController', 'action': 'CheckFileExistsError'})
             return False
 
-    def upload_dataframe_to_gcs(self, df, gcs_path, file_format='parquet'):
+    def upload_dataframe_to_gcs(self, df, gcs_path, file_format='parquet', is_exist_verification=True):
         """
-        Save a pandas DataFrame as a Parquet file and upload it to GCS.
+        Save a pandas DataFrame as a Parquet file and upload it to GCS, ensuring the columns (header) are included.
 
+        :param is_exist_verification: A boolean indicating whether to verify if the file already exists in GCS before uploading.
         :param df: The pandas DataFrame to be saved and uploaded.
         :param gcs_path: The destination path in the GCS bucket.
         :param file_format: The file format to save the DataFrame (default is 'parquet').
         """
-        logger.log_info(f"Starting DataFrame upload to GCS as {file_format} format.",
+        logger.log_info(f"Starting DataFrame upload to GCS as {file_format} format, ensuring columns (header) are saved.",
                         context={'mod': 'GCSController', 'action': 'StartDFUpload'})
+
         temp_file = None
         try:
-            if self.check_file_exists(gcs_path):
-                logger.log_info(f"File {gcs_path} already exists. Skipping upload.", context={'mod': 'GCSController', 'action': 'FileExists'})
-                return
+            if is_exist_verification:
+                if self.check_file_exists(gcs_path):
+                    logger.log_info(f"File {gcs_path} already exists. Skipping upload.", context={'mod': 'GCSController', 'action': 'FileExists'})
+                    return
 
+            # Ensure the DataFrame is saved with its header (column names)
             temp_file = self._save_data_to_temp(df, file_format)
+
+            # Upload the file to GCS
             self._upload_to_gcs(temp_file, gcs_path)
-            logger.log_info(f"Uploaded DataFrame to {gcs_path} in GCS.",
-                            context={'mod': 'GCSController', 'action': 'DFUploadSuccess'})
+            logger.log_info(f"Uploaded DataFrame to {gcs_path} in GCS, including columns.", context={'mod': 'GCSController', 'action': 'DFUploadSuccess'})
 
         except Exception as e:
-            logger.log_error(f"Error uploading DataFrame to GCS: {e}",
-                             context={'mod': 'GCSController', 'action': 'DFUploadError'})
+            logger.log_error(f"Error uploading DataFrame to GCS: {e}", context={'mod': 'GCSController', 'action': 'DFUploadError'})
             raise
 
         finally:
@@ -221,3 +225,30 @@ class GCSController:
 
         logger.log_info(f"Generated {len(gcs_paths)} GCS paths.", context={'mod': 'GCSController', 'action': 'GeneratePathsComplete'})
         return gcs_paths
+
+    def download_parquet_as_dataframe(self, gcs_path):
+        """
+        Download a Parquet file from GCS and convert it into a Pandas DataFrame.
+
+        :param gcs_path: The path to the Parquet file in GCS.
+        :return: The DataFrame containing the data from the Parquet file.
+        """
+        try:
+            bucket = self.gcs_client.bucket
+            blob = bucket.blob(gcs_path)
+            temp_file = self._generate_temp_file('parquet')
+
+            # Download the Parquet file from GCS to a temporary file
+            blob.download_to_filename(temp_file)
+            logger.log_info(f"Downloaded Parquet file from GCS: {gcs_path}")
+
+            # Read the temporary file into a DataFrame
+            df = pd.read_parquet(temp_file)
+
+            # Remove the temporary file after reading
+            self._remove_temp_file(temp_file)
+
+            return df
+        except Exception as e:
+            logger.log_error(f"Error downloading Parquet file from GCS: {e}")
+            raise

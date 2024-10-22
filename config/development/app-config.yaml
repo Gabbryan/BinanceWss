@@ -15,11 +15,18 @@ logging:
   interval: 1
   backup_count: 7
 
+wss-binance:
+  bucket: production-trustia-raw-data
+  symbols:
+    - BTCUSDT
+  streams:
+    - depth
+
 
 
 Ta-lib:
   bucket: production-trustia-raw-data
-custom_indicators: [
+  custom_indicators: [
   { 'name': 'ema', 'params': { 'length': 20 } },  # Exponential Moving Average
   { 'name': 'macd', 'params': { } },  # MACD
   { 'name': 'rsi', 'params': { 'length': 14 } },  # RSI
@@ -33,7 +40,5 @@ custom_indicators: [
   { 'name': 'bollinger_bands', 'params': { 'length': 20, 'nbdevup': 2, 'nbdevdn': 2 } },  # Bollinger Bands
   { 'name': 'mfi', 'params': { 'length': 14 } },  # Money Flow Index
   { 'name': 'trix', 'params': { 'length': 15 } },  # TRIX Indicator
-  { 'name': 'obv', 'params': { } },  # On Balance Volume
-  { 'name': 'sar', 'params': { 'acceleration': 0.02, 'maximum': 0.2 } },  # Parabolic SAR
   { 'name': 'willr', 'params': { 'length': 14 } }  # Williams %R
 ]
