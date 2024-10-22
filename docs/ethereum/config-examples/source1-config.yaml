@@ -1,7 +1,0 @@
-# Ethereum Stablecoins - Example Configuration
-
-source_name: ethereum_stablecoins
-api:
-  base_url: https://api.ethereum.org
-  endpoint: /stablecoins
-  api_key: YOUR_API_KEY

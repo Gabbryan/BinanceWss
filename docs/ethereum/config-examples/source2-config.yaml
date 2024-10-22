@@ -1,7 +1,0 @@
-# Ethereum ERC20 - Example Configuration
-
-source_name: ethereum_erc20
-api:
-  base_url: https://api.ethereum.org
-  endpoint: /erc20
-  api_key: YOUR_API_KEY
