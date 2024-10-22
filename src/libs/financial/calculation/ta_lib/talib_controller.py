@@ -2,8 +2,8 @@ from typing import List, Dict, Any
 
 import numpy as np
 import pandas as pd
-import pandas_ta as ta
 
+from src.commons.env_manager.env_controller import EnvController
 from src.commons.logs.logging_controller import LoggingController
 
 # Initialize the logging controller
@@ -126,6 +126,7 @@ class TAIndicatorController:
 if __name__ == "__main__":
     # Instantiate the controller with the generated sample data
     controller = TAIndicatorController()
+    env_controller = EnvController()
 
     # Compute a single indicator (e.g., Relative Strength Index - RSI)
     rsi_df = controller.compute_single_indicator('rsi', {'length': 14})
@@ -133,10 +134,7 @@ if __name__ == "__main__":
     controller.display_full_dataframe()
 
     # Compute a list of custom indicators
-    custom_indicators = [
-        {'name': 'ema', 'params': {'length': 20}},  # Exponential Moving Average
-        {'name': 'macd', 'params': {}},  # MACD
-    ]
+    custom_indicators = env_controller.get_yaml_config('Ta-lib', 'custom_indicators')
     custom_df = controller.compute_custom_indicators(custom_indicators)
     print("\nDataFrame with Custom Indicators:")
     controller.display_full_dataframe()
