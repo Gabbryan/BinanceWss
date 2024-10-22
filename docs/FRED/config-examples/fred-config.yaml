@@ -1,6 +1,0 @@
-# FRED - Example Configuration
-
-source_name: fred_data
-api:
-  base_url: https://api.stlouisfed.org
-  api_key: YOUR_API_KEY
