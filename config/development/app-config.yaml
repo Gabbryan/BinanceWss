@@ -1,12 +1,14 @@
 Binance-data-vision:
   symbols:
-    - AMBUSDT
-  stream: aggTrades
+    - BTCUSDT
+    - ETHUSDT
+  stream: klines
   timeframes:
-    - 1h
+    - 4h
+    - 30m
   bucket: production-trustia-raw-data
-  start_date: 2024-09-20
-  end_date: 2024-09-30
+  start_date: 2023-01-01
+  end_date:
   base_url: https://data.binance.vision/data/
 
 logging:
@@ -15,6 +17,28 @@ logging:
   interval: 1
   backup_count: 7
 
+
+Ta-lib:
+  bucket: production-trustia-raw-data
+  custom_indicators: [
+    { 'name': 'ema', 'params': { 'length': 20 } },  # Exponential Moving Average
+    { 'name': 'macd', 'params': { } },  # MACD
+    { 'name': 'rsi_14', 'params': { 'length': 14 } },  # RSI
+    { 'name': 'rsi_21', 'params': { 'length': 21 } },  # RSI 21
+    { 'name': 'sma', 'params': { 'length': 50 } },  # Simple Moving Average
+    { 'name': 'wma', 'params': { 'length': 30 } },  # Weighted Moving Average
+    { 'name': 'stoch', 'params': { 'fastk_period': 14, 'slowk_period': 3, 'slowd_period': 3 } },  # Stochastic Oscillator
+    { 'name': 'adx', 'params': { 'length': 14 } },  # Average Directional Index
+    { 'name': 'atr', 'params': { 'length': 14 } },  # Average True Range
+    { 'name': 'cci', 'params': { 'length': 20 } },  # Commodity Channel Index
+    { 'name': 'roc', 'params': { 'length': 12 } },  # Rate of Change
+    { 'name': 'bollinger_bands', 'params': { 'length': 20, 'nbdevup': 2, 'nbdevdn': 2 } },  # Bollinger Bands
+    { 'name': 'mfi', 'params': { 'length': 14 } },  # Money Flow Index
+    { 'name': 'trix', 'params': { 'length': 15 } },  # TRIX Indicator
+    { 'name': 'obv', 'params': { } },  # On Balance Volume
+    { 'name': 'sar', 'params': { 'acceleration': 0.02, 'maximum': 0.2 } },  # Parabolic SAR
+    { 'name': 'willr', 'params': { 'length': 14 } }  # Williams %R
+  ]
 wss-binance:
   bucket: production-trustia-raw-data
   symbols:
@@ -24,21 +48,4 @@ wss-binance:
 
 
 
-Ta-lib:
-  bucket: production-trustia-raw-data
-  custom_indicators: [
-  { 'name': 'ema', 'params': { 'length': 20 } },  # Exponential Moving Average
-  { 'name': 'macd', 'params': { } },  # MACD
-  { 'name': 'rsi', 'params': { 'length': 14 } },  # RSI
-  { 'name': 'sma', 'params': { 'length': 50 } },  # Simple Moving Average
-  { 'name': 'wma', 'params': { 'length': 30 } },  # Weighted Moving Average
-  { 'name': 'stoch', 'params': { 'fastk_period': 14, 'slowk_period': 3, 'slowd_period': 3 } },  # Stochastic Oscillator
-  { 'name': 'adx', 'params': { 'length': 14 } },  # Average Directional Index
-  { 'name': 'atr', 'params': { 'length': 14 } },  # Average True Range
-  { 'name': 'cci', 'params': { 'length': 20 } },  # Commodity Channel Index
-  { 'name': 'roc', 'params': { 'length': 12 } },  # Rate of Change
-  { 'name': 'bollinger_bands', 'params': { 'length': 20, 'nbdevup': 2, 'nbdevdn': 2 } },  # Bollinger Bands
-  { 'name': 'mfi', 'params': { 'length': 14 } },  # Money Flow Index
-  { 'name': 'trix', 'params': { 'length': 15 } },  # TRIX Indicator
-  { 'name': 'willr', 'params': { 'length': 14 } }  # Williams %R
-]
+

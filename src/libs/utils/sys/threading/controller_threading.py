@@ -36,3 +36,4 @@ class ThreadController:
         """
         for thread in self.threads:
             thread.join()
+        self.threads.clear()
