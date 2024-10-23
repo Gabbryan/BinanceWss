@@ -26,6 +26,7 @@ class NotificationsController:
             "Success is just around the corner! 🌟"
         ]
         self.process_start_time = None
+        self.env = self.EnvController.env
 
     def _get_motivational_quote(self):
         """
@@ -98,6 +99,7 @@ class NotificationsController:
         process_id = self._get_process_id()
         start_time = self._get_current_datetime()
         hostname = self._get_hostname()
+
         system_stats = self._get_system_stats()
         thread_count = self._get_thread_count()
         disk_usage = self._get_disk_usage()
@@ -106,7 +108,7 @@ class NotificationsController:
         quote = self._get_motivational_quote()
 
         message = (
-            f"🚀 *{self.service_name}* processing has started!\n"
+            f"🚀 *{self.service_name} ({self.env})* processing has started!\n"
             f"🔧 *Process ID*: `{process_id}`\n"
             f"🕒 *Start Time*: {start_time}\n"
             f"💻 *Host*: `{hostname}`\n"
@@ -118,7 +120,7 @@ class NotificationsController:
             f"🩺 *System Health*: {health_status}\n"
             f"💬 _\"{quote}\"_"
         )
-        self.slack_controller.send_slack_message(f"{self.service_name} Process Started 🚀", message, "#36a64f")
+        self.slack_controller.send_slack_message(f"{self.service_name} ({self.env}) Process Started 🚀", message, "#36a64f")
 
     def send_process_end_message(self):
         """
@@ -137,7 +139,7 @@ class NotificationsController:
         quote = self._get_motivational_quote()
 
         message = (
-            f"🎉 *{self.service_name}* processing is complete!\n"
+            f"🎉 *{self.service_name} ({self.env})* processing is complete!\n"
             f"🕒 *End Time*: {end_time}\n"
             f"⏳ *Duration*: {elapsed_time / 60:.2f} minutes\n"
             f"{warning}\n"
@@ -149,7 +151,7 @@ class NotificationsController:
             f"🖥️ *System Uptime*: {uptime}\n"
             f"💬 _\"{quote}\"_"
         )
-        self.slack_controller.send_slack_message(f"{self.service_name} Process Complete 🎉", message, "#36a64f")
+        self.slack_controller.send_slack_message(f"{self.service_name} ({self.env}) Process Complete 🎉", message, "#36a64f")
 
     def send_error_notification(self, error_message, app_name):
         """
@@ -164,4 +166,4 @@ class NotificationsController:
             f"```{error_message}```\n"
             "But remember, every setback is a setup for a comeback! 💪"
         )
-        self.slack_controller.send_slack_message(f"{app_name} Error ⚠️", message, "#ff0000")
+        self.slack_controller.send_slack_message(f"{app_name} ({self.env}) Error ⚠️", message, "#ff0000")
