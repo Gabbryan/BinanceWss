@@ -45,7 +45,7 @@ class DataFrameVerificationController:
 
     def convert_dates_to_timestamps(self, df, context=None):
         """
-        Convert all detected date columns to Unix timestamps, and rename them to 'timestamp' format.
+        Convert all detected date columns to Unix timestamps, handle timezones, and rename them to 'timestamp' format.
         """
         # Automatically detect columns that contain 'date' and convert them
         date_columns = [col for col in df.columns if 'date' in col.lower()]
@@ -54,8 +54,13 @@ class DataFrameVerificationController:
 
         for col in date_columns:
             try:
-                # Convert to datetime and handle invalid dates
-                df[col] = pd.to_datetime(df[col], errors='coerce')
+                # Convert to datetime, handle invalid dates, and normalize to UTC
+                df[col] = pd.to_datetime(df[col], errors='coerce', utc=True)
+
+                # Apply timezone conversion if needed (example: convert to a specific timezone)
+                # df[col] = df[col].dt.tz_convert('Europe/Paris')
+
+                # Convert to Unix timestamps
                 df[col] = df[col].apply(lambda x: int(x.timestamp()) if not pd.isnull(x) else np.nan)
 
                 # Rename the column from 'date' to 'timestamp'
@@ -67,7 +72,6 @@ class DataFrameVerificationController:
         # Apply the renaming
         df.rename(columns=renamed_columns, inplace=True)
         return df
-
 
     def merge_columns(self, df, context=None):
         """
