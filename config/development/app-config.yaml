@@ -1,9 +1,7 @@
 Binance-data-vision:
   symbols:
     - AMBUSDT
-  stream:
-    - aggTrades
-    - klines
+  stream: aggTrades
   timeframes:
     - 1h
   bucket: production-trustia-raw-data
