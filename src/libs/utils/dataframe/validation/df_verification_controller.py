@@ -44,14 +44,30 @@ class DataFrameVerificationController:
         return df
 
     def convert_dates_to_timestamps(self, df, context=None):
-        for col in self.date_columns:
-            if col in df.columns:
-                try:
-                    df[col] = pd.to_datetime(df[col], errors='coerce')
-                    df[col] = df[col].apply(lambda x: int(x.timestamp()) if not pd.isnull(x) else np.nan)
-                except Exception as e:
-                    self.logger.log_error(f"Error converting {col} to timestamp: {e}", context)
+        """
+        Convert all detected date columns to Unix timestamps, and rename them to 'timestamp' format.
+        """
+        # Automatically detect columns that contain 'date' and convert them
+        date_columns = [col for col in df.columns if 'date' in col.lower()]
+
+        renamed_columns = {}
+
+        for col in date_columns:
+            try:
+                # Convert to datetime and handle invalid dates
+                df[col] = pd.to_datetime(df[col], errors='coerce')
+                df[col] = df[col].apply(lambda x: int(x.timestamp()) if not pd.isnull(x) else np.nan)
+
+                # Rename the column from 'date' to 'timestamp'
+                new_col_name = col.replace("date", "timestamp").replace("Date", "Timestamp")
+                renamed_columns[col] = new_col_name
+            except Exception as e:
+                self.logger.log_error(f"Error converting {col} to timestamp: {e}", context)
+
+        # Apply the renaming
+        df.rename(columns=renamed_columns, inplace=True)
         return df
+
 
     def merge_columns(self, df, context=None):
         """
@@ -130,6 +146,16 @@ if __name__ == "__main__":
         'Another': [5, 6, 7]
     })
 
+    df5 = pd.DataFrame({
+        'Open': [1.0, 2.0, 3.0],
+        'High': [1.2, 2.2, 3.2],
+        'Low': [0.9, 1.9, 2.9],
+        'Close': [1.1, 2.1, 3.1],
+        'Volume': [100, 200, 300],
+        'Date': ['2023-10-01', '2023-10-02', 'Invalid Date'],  # 'Invalid Date' should be handled
+        'Created_date': ['2023-10-01', '2023-10-02', '2023-10-03']  # Additional date column to be renamed
+    })
+
     required_columns = ['Open', 'High', 'Low', 'Close', 'Volume', 'Date']
     data_type_checks = {'Open': 'float64', 'High': 'float64', 'Close': 'float64', 'Volume': 'int64'}
     date_columns = ['Date']
@@ -157,3 +183,6 @@ if __name__ == "__main__":
     # Test 4: Completely missing required columns
     df4 = df_verification_controller.validate_and_transform_dataframe(df4, clean_data=True, context=context)
     print(df4)
+
+    df5 = df_verification_controller.validate_and_transform_dataframe(df5, clean_data=True, context=context)
+    print(df5)
