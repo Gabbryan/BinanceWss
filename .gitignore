@@ -5,6 +5,9 @@ __pycache__/
 *$py.class
 *log.*
 *.ipynb
+*.idea
+.DS_Store
+my_env
 # C extensions
 *.so
 .loic_venv
