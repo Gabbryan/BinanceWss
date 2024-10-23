@@ -1,14 +1,14 @@
 import numpy as np
 import pandas as pd
+from scipy import stats
 
 from src.commons.logs.logging_controller import LoggingController
 
 
 class DataFrameVerificationController:
-    def __init__(self, required_columns=None, data_type_checks=None, date_columns=None, schema=None, merge_mapping=None):
+    def __init__(self, required_columns=None, data_type_checks=None, schema=None, merge_mapping=None):
         self.required_columns = required_columns if required_columns else []
         self.data_type_checks = data_type_checks if data_type_checks else {}
-        self.date_columns = date_columns if date_columns else []
         self.schema = schema if schema else {}
         self.merge_mapping = merge_mapping if merge_mapping else {}
         self.logger = LoggingController("DataFrame Verification Controller")
@@ -57,10 +57,7 @@ class DataFrameVerificationController:
                 # Convert to datetime, handle invalid dates, and normalize to UTC
                 df[col] = pd.to_datetime(df[col], errors='coerce', utc=True)
 
-                # Apply timezone conversion if needed (example: convert to a specific timezone)
-                # df[col] = df[col].dt.tz_convert('Europe/Paris')
-
-                # Convert to Unix timestamps
+                # Convert to Unix timestamps (ensure no scientific notation)
                 df[col] = df[col].apply(lambda x: int(x.timestamp()) if not pd.isnull(x) else np.nan)
 
                 # Rename the column from 'date' to 'timestamp'
@@ -110,7 +107,6 @@ class DataFrameVerificationController:
             df.fillna(fill_na_value, inplace=True)
             self.logger.log_info(f"Filled missing values with {fill_na_value}.", context)
         if handle_outliers:
-            from scipy import stats
             df = df[(np.abs(stats.zscore(df.select_dtypes(include=[np.number]))) < 3).all(axis=1)]
             self.logger.log_info("Handled outliers using Z-score method.", context)
         return df
@@ -162,17 +158,18 @@ if __name__ == "__main__":
 
     required_columns = ['Open', 'High', 'Low', 'Close', 'Volume', 'Date']
     data_type_checks = {'Open': 'float64', 'High': 'float64', 'Close': 'float64', 'Volume': 'int64'}
-    date_columns = ['Date']
     merge_mapping = {'Open': 'Something', 'High': 'Else'}
 
     df_verification_controller = DataFrameVerificationController(
         required_columns=required_columns,
         data_type_checks=data_type_checks,
-        date_columns=date_columns,
         merge_mapping=merge_mapping
     )
+    # Force pandas to display the full integer format for timestamps
+    pd.set_option('display.float_format', '{:.0f}'.format)
 
-    # Test 1: DataFrame with correct columns but incorrect data types
+
+# Test 1: DataFrame with correct columns but incorrect data types
     df1 = df_verification_controller.validate_and_transform_dataframe(df1, clean_data=True, context=context)
     print(df1)
 
