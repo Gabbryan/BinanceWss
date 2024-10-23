@@ -171,23 +171,6 @@ class TransformationTaLib:
         # Step 3: Send notification upon process completion
         self.logger.log_info("All tasks completed successfully.")
         self.notifications_controller.send_process_end_message()
-
-
-    def _process_tasks_with_threads(self, tasks_by_group):
-        """
-        Process tasks using threading to parallelize the execution for each (symbol, market, timeframe).
-
-        :param tasks_by_group: A set of tasks (symbol, market, timeframe) to be processed.
-        """
-        # Initialize thread controller and assign threads for each task
-        for task in tasks_by_group:
-            self.thread_controller.add_thread(self, "process_group_task", *task)
-
-        # Start all threads in parallel
-        self.thread_controller.start_all()
-
-        # Stop all threads once they are completed
-        self.thread_controller.stop_all()
         
         
     def _process_tasks_with_threads(self, tasks_by_group):
