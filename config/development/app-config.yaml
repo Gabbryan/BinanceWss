@@ -17,6 +17,7 @@ logging:
   interval: 1
   backup_count: 7
 
+
 Ta-lib:
   bucket: production-trustia-raw-data
   custom_indicators: [
@@ -38,3 +39,13 @@ Ta-lib:
     { 'name': 'sar', 'params': { 'acceleration': 0.02, 'maximum': 0.2 } },  # Parabolic SAR
     { 'name': 'willr', 'params': { 'length': 14 } }  # Williams %R
   ]
+wss-binance:
+  bucket: production-trustia-raw-data
+  symbols:
+    - BTCUSDT
+  streams:
+    - depth
+
+
+
+
