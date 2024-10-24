@@ -96,7 +96,7 @@ class TransformationTaLib:
         def process_file(gcs_file):
             try:
                 file_path = f"gs://{self.bucket_name}/{gcs_file}"
-                
+
                 # Use the existing method to read the parquet file and set the correct columns
                 df_part = self.read_parquet_with_pyarrow(file_path)
 
@@ -117,7 +117,7 @@ class TransformationTaLib:
                 # Keep only the necessary columns
                 columns_to_keep = ['timestamp', 'open', 'high', 'low', 'close', 'volume']
                 df_part = df_part[[col for col in columns_to_keep if col in df_part.columns]]
-                
+
                 return df_part  # Return the processed DataFrame for this file
             except Exception as e:
                 self.logger.log_error(f"Erreur lors du traitement du fichier {gcs_file}: {e}")
@@ -132,8 +132,8 @@ class TransformationTaLib:
             df_combined = pd.concat(dfs, ignore_index=True)
 
         return df_combined
-    
-    
+
+
     def _create_indicator_tasks_by_group(self):
         """
         Create tasks for each (symbol, market, timeframe) group.
@@ -154,7 +154,7 @@ class TransformationTaLib:
                 tasks_by_group.add((symbol, market, timeframe))
 
         return tasks_by_group
-        
+
     def compute_and_upload_indicators(self):
         """
         Compute and upload indicators for all (symbol, market, timeframe) groups in parallel.
@@ -170,9 +170,8 @@ class TransformationTaLib:
 
         # Step 3: Send notification upon process completion
         self.logger.log_info("All tasks completed successfully.")
-        self.notifications_controller.send_process_end_message()
-        
-        
+
+
     def _process_tasks_with_threads(self, tasks_by_group):
         """
         Process tasks using threading to parallelize the execution for each (symbol, market, timeframe).
@@ -221,7 +220,7 @@ class TransformationTaLib:
                 latest_end_date = self.extract_metadata_from_file(last_file)
 
                 # Load existing data
-                df_existing = self.bucket_manager.load_gcs_file_to_dataframe(self.bucket_name, last_file, file_format='parquet')
+                df_existing = self.bucket_manager.load_gcs_file_to_dataframe(last_file, file_format='parquet')
 
                 if latest_end_date and latest_end_date.date() == datetime.now().date():
                     self.logger.log_info(f"File for {symbol} / {market} / {timeframe} is up to date. Checking for missing indicators.")
@@ -235,7 +234,7 @@ class TransformationTaLib:
                         # Compute and upload missing indicators
                         self._compute_and_upload_missing_indicators(symbol, market, timeframe, df_existing, missing_indicators, last_file)
                         return
-                
+
                 elif latest_end_date:
                     # If there are incomplete or missing files, proceed with further processing
                     self._process_incomplete_data(symbol, market, timeframe, file_list, df_existing, latest_end_date)
@@ -246,7 +245,7 @@ class TransformationTaLib:
             self.logger.log_info(f"Thread {thread_name} finished processing for {symbol} / {market} / {timeframe}.")
         except Exception as e:
             self.logger.log_error(f"Error in thread {thread_name} for {symbol}/{market}/{timeframe}: {e}")
-            
+
 
     def _compute_and_upload_missing_indicators(self, symbol, market, timeframe, df_existing, missing_indicators, last_file):
         """
@@ -289,7 +288,7 @@ class TransformationTaLib:
                 df_combined = df_new
 
             print("DF_COMBINED", df_combined)
-            
+
             # Remove existing indicator columns before recalculation
             indicators_to_remove = [ind['name'] for ind in self.custom_indicators if ind['name'] in df_combined.columns]
             if indicators_to_remove:
@@ -322,7 +321,7 @@ class TransformationTaLib:
                                 and self._extract_metadata_from_path(file)[1] == market  # Verify market
                                 and self._extract_metadata_from_path(file)[2] == timeframe  # Verify timeframe
                                 and (self.extract_metadata_from_file(file) >= start_date if start_date else True)]
-            
+
             df_new = self.download_and_aggregate_klines(files_to_process)
             print("CCCCDF_NEW", df_new)
             if df_new.empty:
@@ -336,7 +335,7 @@ class TransformationTaLib:
                 df_combined = df_new
 
             print("CCCDF_COMBINED", df_combined)
-            
+
             # Remove existing indicator columns before recalculation
             indicators_to_remove = [ind['name'] for ind in self.custom_indicators if ind['name'] in df_combined.columns]
             if indicators_to_remove:
@@ -355,7 +354,7 @@ class TransformationTaLib:
 
         except Exception as e:
             self.logger.log_error(f"Error processing incomplete data for {symbol} / {market} / {timeframe}: {e}")
-            
+
     def _upload_new_dataframe(self, symbol, market, timeframe, df_with_indicators):
         """
         Upload the new DataFrame with recalculated indicators to GCS.
