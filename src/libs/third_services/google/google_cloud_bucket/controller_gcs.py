@@ -1,5 +1,7 @@
 import os
 import tempfile
+
+import uuid
 from google.cloud import storage
 
 import pandas as pd
@@ -7,6 +9,8 @@ import pandas as pd
 from src.commons.logs.logging_controller import LoggingController
 from src.libs.third_services.google.google_cloud_bucket.server_gcs import GCSClient
 import threading
+import uuid
+
 
 # Initialize the logging controller
 logger = LoggingController("GCSController")
@@ -22,12 +26,10 @@ class GCSController:
         self.gcs_client = GCSClient(bucket_name)
         self.bucket_name = bucket_name
         logger.log_info(f"GCS Controller initialized with bucket: {bucket_name}", context={'mod': 'GCSController', 'action': 'Init'})
-        
-    def load_gcs_file_to_dataframe(self, bucket_name, file_path, file_format='parquet'):
+
+    def load_gcs_file_to_dataframe(self, file_path, file_format='parquet',multi_threading = False):
         """
         Télécharge un fichier à partir de Google Cloud Storage et le charge dans un DataFrame.
-
-        :param bucket_name: Le nom du bucket GCS.
         :param file_path: Le chemin du fichier dans le bucket.
         :param file_format: Le format du fichier ('parquet', 'csv', etc.).
         :return: DataFrame contenant les données du fichier.
@@ -36,18 +38,22 @@ class GCSController:
             # Créer un client GCS
             client = storage.Client()
             bucket = client.bucket(self.bucket_name)
-            
+
             # Récupérer le blob (fichier) depuis le bucket
             blob = bucket.blob(file_path)
-            
-            # Générer un nom de fichier temporaire unique en fonction du nom du thread
-            thread_name = threading.current_thread().name
-            temp_file_path = f'/tmp/temp_file_{thread_name}.' + file_format
-            
+
+            # if multi_threading:
+            #     # Générer un nom de fichier temporaire unique en fonction du nom du thread
+            #     tmp_uuid = uuid.uuid4()
+            #     thread_name = threading.current_thread().name
+            #     temp_file_path = f'/tmp/temp_file_{thread_name}.' + file_format
+
+            temp_file_path =  self._generate_temp_file(file_format)
+
             # Télécharger le fichier depuis GCS
             blob.download_to_filename(temp_file_path)
             logger.log_info(f"Fichier téléchargé depuis GCS : {temp_file_path}", context={'mod': 'GCSController', 'action': 'DownloadFile'})
-            
+
             # Charger le fichier dans un DataFrame
             if file_format == 'parquet':
                 df = pd.read_parquet(temp_file_path)
@@ -55,10 +61,10 @@ class GCSController:
                 df = pd.read_csv(temp_file_path)
             else:
                 raise ValueError(f"Format de fichier non supporté : {file_format}")
-            
+
             # Retourner le DataFrame
             return df
-            
+
         except Exception as e:
             logger.log_error(f"Erreur lors du téléchargement ou du chargement du fichier {file_path} : {e}", context={'mod': 'GCSController', 'action': 'LoadFileError'})
             return None
@@ -278,14 +284,14 @@ class GCSController:
             # Create a client for GCS
             client = storage.Client()
             bucket = client.bucket(self.bucket_name)
-            
+
             # Get the blob (file) from GCS
             blob = bucket.blob(gcs_path)
 
             # Delete the file from GCS
             blob.delete()
             logger.log_info(f"File {gcs_path} deleted from GCS.", context={'mod': 'GCSController', 'action': 'DeleteFile'})
-            
+
         except Exception as e:
             logger.log_error(f"Error deleting file {gcs_path} from GCS: {e}", context={'mod': 'GCSController', 'action': 'DeleteFileError'})
 
