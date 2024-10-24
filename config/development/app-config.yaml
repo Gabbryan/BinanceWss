@@ -32,11 +32,11 @@ Ta-lib:
     { 'name': 'atr', 'params': { 'length': 14 } },  # Average True Range
     { 'name': 'cci', 'params': { 'length': 20 } },  # Commodity Channel Index
     { 'name': 'roc', 'params': { 'length': 12 } },  # Rate of Change
-    { 'name': 'bollinger_bands', 'params': { 'length': 20, 'nbdevup': 2, 'nbdevdn': 2 } },  # Bollinger Bands
+    { 'name': 'bbands', 'params': { 'length': 20, 'std': 2, 'mamode': 'sma', 'ddof': 0 } },  # Bollinger Bands
     { 'name': 'mfi', 'params': { 'length': 14 } },  # Money Flow Index
     { 'name': 'trix', 'params': { 'length': 15 } },  # TRIX Indicator
     { 'name': 'obv', 'params': { } },  # On Balance Volume
-    { 'name': 'sar', 'params': { 'acceleration': 0.02, 'maximum': 0.2 } },  # Parabolic SAR
+    { 'name': 'psar', 'params': { } },  # Parabolic SAR
     { 'name': 'willr', 'params': { 'length': 14 } }  # Williams %R
   ]
 wss-binance:

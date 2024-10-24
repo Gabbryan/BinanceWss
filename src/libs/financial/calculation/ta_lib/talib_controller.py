@@ -130,12 +130,12 @@ if __name__ == "__main__":
     env_controller = EnvController()
 
     # Compute a single indicator (e.g., Relative Strength Index - RSI)
-    rsi_df = controller.compute_single_indicator('rsi', {'length': 14})
+    sardf = controller.compute_single_indicator('psar', { 'acceleration': 0.02, 'maximum': 0.2 })
     print("RSI Indicator DataFrame:")
     controller.display_full_dataframe()
 
     # Compute a list of custom indicators
-    custom_indicators = env_controller.get_yaml_config('Ta-lib', 'custom_indicators')
-    custom_df = controller.compute_custom_indicators(custom_indicators)
-    print("\nDataFrame with Custom Indicators:")
-    controller.display_full_dataframe()
+    # custom_indicators = env_controller.get_yaml_config('Ta-lib', 'custom_indicators')
+    # custom_df = controller.compute_custom_indicators(custom_indicators)
+    # print("\nDataFrame with Custom Indicators:")
+    # controller.display_full_dataframe()
