@@ -1,29 +1,31 @@
 from src.libs.third_services.slack.server_slack import SlackAPI
 
-
 class SlackMessageController:
     def __init__(self, webhook_url: str):
+        """
+        Initialize SlackMessageController with a webhook URL for sending messages to Slack.
+
+        :param webhook_url: The Slack webhook URL.
+        """
+        # Import LoggingController here to avoid circular import at the top level
         self.slack_api = SlackAPI(webhook_url)
 
     def format_message(self, header: str, message: str, color: str = "#6a0dad", link: str = None):
         """
-        Formate le message à envoyer avec un en-tête, un message principal et éventuellement un lien.
+        Format the message to be sent with a header, main message, and optionally a link.
 
-        :param header: L'en-tête du message.
-        :param message: Le texte principal du message.
-        :param color: La couleur de l'attachement du message.
-        :param link: Un lien facultatif à inclure dans le message.
-        :return: Un payload formaté prêt à être envoyé à l'API Slack.
+        :param header: The header of the message.
+        :param message: The main text of the message.
+        :param color: The color of the message attachment.
+        :param link: An optional link to include in the message.
+        :return: A formatted payload ready to be sent to the Slack API.
         """
         if link:
             message = f"{message} <{link}>"
 
         payload = {
             "blocks": [
-                {
-                    "type": "header",
-                    "text": {"type": "plain_text", "text": header, "emoji": True},
-                },
+                {"type": "header", "text": {"type": "plain_text", "text": header, "emoji": True}},
                 {"type": "section", "text": {"type": "mrkdwn", "text": message}},
             ],
             "attachments": [{"color": color}],
@@ -33,15 +35,19 @@ class SlackMessageController:
 
     def send_slack_message(self, header: str, message: str, color: str = "#6a0dad", link: str = None):
         """
-        Formate et envoie un message à Slack via le channel défini dans server_slack.py
+        Format and send a message to Slack using the webhook URL.
 
-        :param header: L'en-tête du message.
-        :param message: Le texte principal du message.
-        :param color: La couleur de l'attachement du message.
-        :param link: Un lien facultatif à inclure dans le message.
+        :param header: The header of the message.
+        :param message: The main text of the message.
+        :param color: The color of the message attachment.
+        :param link: An optional link to include in the message.
         """
         payload = self.format_message(header, message, color, link)
-        return self.slack_api.send_message(payload)
+        try:
+            response = self.slack_api.send_message(payload)
+            return response
+        except Exception as e:
+            return None
 
 
 if __name__ == "__main__":

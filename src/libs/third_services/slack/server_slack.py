@@ -1,27 +1,29 @@
 import requests
 
-
 class SlackAPI:
     def __init__(self, webhook_url: str):
+        """
+        Initialize the SlackAPI with a webhook URL.
+
+        :param webhook_url: The Slack webhook URL.
+        """
         self.webhook_url = webhook_url
 
     def send_message(self, payload: dict):
         """
-        Envoie un message à Slack via une URL Webhook.
+        Send a message to Slack using a Webhook URL.
 
-        :param payload: Le payload formaté à envoyer à l'API Slack.
-        :return: Un dictionnaire avec le statut de l'envoi.
+        :param payload: The formatted payload to send to the Slack API.
+        :return: A dictionary with the status of the send operation.
         """
-        response = requests.post(self.webhook_url, json=payload, timeout=5)
+        try:
+            response = requests.post(self.webhook_url, json=payload, timeout=5)
+            if response.status_code != 200:
+                raise ValueError(f"Request to Slack returned an error {response.status_code}, response:\n{response.text}")
 
-        if response.status_code != 200:
-            raise ValueError(
-                f"Request to Slack returned an error {response.status_code}, the response is:\n{response.text}"
-            )
+            if response.text.strip() != "ok":
+                raise ValueError(f"Request to Slack returned an unexpected response:\n{response.text}")
 
-        if response.text.strip() != "ok":
-            raise ValueError(
-                f"Request to Slack returned an unexpected response:\n{response.text}"
-            )
-
-        return {"status": "Message sent successfully"}
+            return {"status": "Message sent successfully"}
+        except Exception as e:
+            raise
