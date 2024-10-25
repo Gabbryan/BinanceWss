@@ -303,7 +303,7 @@ class BinanceWSSClient(WSSClient):
             'symbol': data['s'],
             'average_price': float(data['w']),
             'interval': data['i'],
-            'trade_time': pd.to_datetime(data['T'], unit='ms')
+            'trade_date': pd.to_datetime(data['T'], unit='ms')
         }])
         logger.log_info("Processed average price update",
                         context={'mod': 'BinanceWSSClient', 'action': 'HandleAvgPriceUpdate', 'symbol': self.symbol})

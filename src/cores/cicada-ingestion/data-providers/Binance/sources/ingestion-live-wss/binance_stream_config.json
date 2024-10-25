@@ -144,13 +144,13 @@
   },
   "avgPrice": {
     "required_columns": [
-      "symbol", "average_price", "interval", "trade_time"
+      "symbol", "average_price", "interval", "trade_date"
     ],
     "data_type_checks": {
       "symbol": "object",
       "average_price": "float64",
       "interval": "object",
-      "trade_time": "datetime64[ns]"
+      "trade_date": "datetime64[ns]"
     }
   },
   "depth": {
