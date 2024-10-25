@@ -1,8 +1,4 @@
 from src.libs.third_services.slack.server_slack import SlackAPI
-from src.commons.logs.logging_controller import LoggingController
-
-# Initialize the logging controller
-logger = LoggingController("SlackMessageController")
 
 class SlackMessageController:
     def __init__(self, webhook_url: str):
@@ -11,8 +7,8 @@ class SlackMessageController:
 
         :param webhook_url: The Slack webhook URL.
         """
+        # Import LoggingController here to avoid circular import at the top level
         self.slack_api = SlackAPI(webhook_url)
-        logger.log_info("SlackMessageController initialized.", context={'mod': 'SlackMessageController', 'action': 'Init'})
 
     def format_message(self, header: str, message: str, color: str = "#6a0dad", link: str = None):
         """
@@ -35,7 +31,6 @@ class SlackMessageController:
             "attachments": [{"color": color}],
         }
 
-        logger.log_info("Message formatted for Slack.", context={'mod': 'SlackMessageController', 'action': 'FormatMessage'})
         return payload
 
     def send_slack_message(self, header: str, message: str, color: str = "#6a0dad", link: str = None):
@@ -50,10 +45,8 @@ class SlackMessageController:
         payload = self.format_message(header, message, color, link)
         try:
             response = self.slack_api.send_message(payload)
-            logger.log_info("Message sent to Slack.", context={'mod': 'SlackMessageController', 'action': 'SendSlackMessage'})
             return response
         except Exception as e:
-            logger.log_error(f"Error sending message to Slack: {e}", context={'mod': 'SlackMessageController', 'action': 'SendSlackMessageError'})
             return None
 
 

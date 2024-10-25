@@ -1,8 +1,4 @@
 import requests
-from src.commons.logs.logging_controller import LoggingController
-
-# Initialize the logging controller
-logger = LoggingController("SlackAPI")
 
 class SlackAPI:
     def __init__(self, webhook_url: str):
@@ -12,7 +8,6 @@ class SlackAPI:
         :param webhook_url: The Slack webhook URL.
         """
         self.webhook_url = webhook_url
-        logger.log_info("SlackAPI initialized with webhook URL.", context={'mod': 'SlackAPI', 'action': 'Init'})
 
     def send_message(self, payload: dict):
         """
@@ -29,8 +24,6 @@ class SlackAPI:
             if response.text.strip() != "ok":
                 raise ValueError(f"Request to Slack returned an unexpected response:\n{response.text}")
 
-            logger.log_info("Message sent to Slack successfully.", context={'mod': 'SlackAPI', 'action': 'SendMessage'})
             return {"status": "Message sent successfully"}
         except Exception as e:
-            logger.log_error(f"Error sending message to Slack: {e}", context={'mod': 'SlackAPI', 'action': 'SendMessageError'})
             raise
