@@ -245,24 +245,39 @@ class BinanceWSSClient(WSSClient):
         self.save_data_to_gcs(df, "24hrMiniTicker")
 
     def handle_ticker_update(self, data):
+        """
+        Handle the 24hr ticker update and create a DataFrame with all fields.
+        """
         df = pd.DataFrame([{
-            'symbol': data['s'],
-            'price_change': float(data['p']),
-            'price_change_percent': float(data['P']),
-            'weighted_avg_price': float(data['w']),
-            'last_price': float(data['c']),
-            'open_price': float(data['o']),
-            'high_price': float(data['h']),
-            'low_price': float(data['l']),
-            'base_asset_volume': float(data['v']),
-            'quote_asset_volume': float(data['q'])
+            'event_date': pd.to_datetime(data['E'], unit='ms'),  # Event time converted to datetime
+            'price_change': float(data['p']),  # Price change
+            'price_change_percent': float(data['P']),  # Price change percent
+            'weighted_avg_price': float(data['w']),  # Weighted average price
+            'first_trade_price': float(data['x']),  # First trade price (before the 24hr window)
+            'last_price': float(data['c']),  # Last price
+            'last_quantity': float(data['Q']),  # Last quantity
+            'best_bid_price': float(data['b']),  # Best bid price
+            'best_bid_quantity': float(data['B']),  # Best bid quantity
+            'best_ask_price': float(data['a']),  # Best ask price
+            'best_ask_quantity': float(data['A']),  # Best ask quantity
+            'open_price': float(data['o']),  # Open price
+            'high_price': float(data['h']),  # High price
+            'low_price': float(data['l']),  # Low price
+            'base_asset_volume': float(data['v']),  # Total traded base asset volume
+            'quote_asset_volume': float(data['q']),  # Total traded quote asset volume
+            'statistics_open_date': pd.to_datetime(data['O'], unit='ms'),  # Statistics open time
+            'statistics_close_date': pd.to_datetime(data['C'], unit='ms'),  # Statistics close time
+            'first_trade_id': int(data['F']),  # First trade ID
+            'last_trade_id': int(data['L']),  # Last trade ID
+            'total_trades': int(data['n']),  # Total number of trades
         }])
-        logger.log_info("Processed ticker update",
-                        context={'mod': 'BinanceWSSClient', 'action': 'HandleTickerUpdate', 'symbol': self.symbol})
 
-        # Validate DataFrame
+        logger.log_info("Processed 24hr ticker update", context={'mod': 'BinanceWSSClient', 'action': 'HandleTickerUpdate', 'symbol': self.symbol})
+
+        # Validate DataFrame against the 24hrTicker configuration
         df = self.validate_dataframe(df, '24hrTicker')
 
+        # Save the validated DataFrame to GCS
         self.save_data_to_gcs(df, "24hrTicker")
 
     def handle_book_ticker_update(self, data):
