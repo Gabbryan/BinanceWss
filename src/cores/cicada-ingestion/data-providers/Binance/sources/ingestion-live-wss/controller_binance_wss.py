@@ -63,6 +63,8 @@ class BinanceWSSClient(WSSClient):
         """
         data = json.loads(message)
         event_type = data.get('e')
+        if event_type == None and self.stream == "bookTicker":
+            event_type = "bookTicker"
         logger.log_info(f"Message received for event type: {event_type}",
                         context={'mod': 'BinanceWSSClient', 'action': 'OnMessage', 'event_type': event_type})
 
