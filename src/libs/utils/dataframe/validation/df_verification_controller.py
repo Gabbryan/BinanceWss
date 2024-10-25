@@ -22,16 +22,24 @@ class DataFrameVerificationController:
         for col, expected_type in self.data_type_checks.items():
             if col in df.columns:
                 try:
+                    # Replace placeholder '-' with NaN to handle missing values
+                    df[col] = df[col].replace('-', np.nan)
+
+                    # Fill NaN values and cast to the expected data type
                     if expected_type == 'int64' and df[col].isnull().any():
                         df[col] = df[col].fillna(0)
                     elif pd.api.types.is_numeric_dtype(df[col]) and expected_type == 'float64':
                         df[col] = df[col].fillna(np.nan)
                     elif pd.api.types.is_string_dtype(df[col]):
                         df[col] = df[col].fillna('')
+
+                    # Convert the column to the expected data type
                     df[col] = df[col].astype(expected_type)
+
                 except (ValueError, TypeError) as e:
                     self.logger.log_error(f"Error converting {col} to {expected_type}: {e}", context)
         return df
+
 
     def convert_dates_to_timestamps(self, df, context=None):
         date_columns = [col for col in df.columns if 'date' in col.lower()]
