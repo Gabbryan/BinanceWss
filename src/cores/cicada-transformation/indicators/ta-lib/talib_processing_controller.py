@@ -10,6 +10,7 @@ from src.commons.logs.logging_controller import LoggingController
 from src.libs.financial.calculation.ta_lib.talib_controller import TAIndicatorController
 from src.libs.third_services.google.google_cloud_bucket.controller_gcs import GCSController
 from src.libs.utils.archives.zip_controller import ZipController
+from src.libs.utils.dataframe.validation.df_verification_controller import DataFrameVerificationController
 from src.libs.utils.sys.threading.controller_threading import ThreadController
 import threading
 
@@ -136,7 +137,7 @@ class TransformationTaLib:
 
     def process_group_task(self, symbol, market, timeframe):
         try:
-            thread_name = threading.current_thread().name
+            thread_name = threading.current_thread().ident
             self.logger.log_info(f"Thread {thread_name} processing {symbol}/{market}/{timeframe}.", context={'mod': 'TransformationTaLib', 'action': 'ProcessTask', 'symbol': symbol, 'market': market, 'timeframe': timeframe})
 
             root_path = f"Raw/binance-data-vision/historical/{symbol}/{market}/klines/{timeframe}/"
@@ -214,7 +215,92 @@ class TransformationTaLib:
                 self.logger.log_info(f"Deleting existing file: {output_gcs_path}", context={'mod': 'TransformationTaLib', 'action': 'DeleteExistingFile', 'path': output_gcs_path})
                 self.bucket_manager.delete_file(output_gcs_path)
 
-            self.bucket_manager.upload_dataframe_to_gcs(df_with_indicators, output_gcs_path, file_format='parquet')
+            required_columns = ['open', 'timestamp', 'high', 'low', 'close', 'volume','date']
+
+            # Define data type checks for mandatory columns and custom indicators
+            data_type_checks = {
+                'open': 'float64',
+                'timestamp': 'datetime64[ns]',
+                'high': 'float64',
+                'low': 'float64',
+                'close': 'float64',
+                'volume': 'float64'
+            }
+            merge_mapping = {'date': 'timestamp'}
+            # Initialize DataFrameVerificationController for validation
+            verification_controller = DataFrameVerificationController(
+                required_columns=required_columns,
+                data_type_checks=data_type_checks,
+                merge_mapping=merge_mapping
+            )
+
+            # Validate the DataFrame
+            validated_df = verification_controller.validate_and_transform_dataframe(df_with_indicators, clean_data=True)
+
+
+            self.bucket_manager.upload_dataframe_to_gcs(validated_df, output_gcs_path, file_format='parquet')
             self.logger.log_info(f"Uploaded new DataFrame for {symbol}/{market}/{timeframe}.", context={'mod': 'TransformationTaLib', 'action': 'UploadNewDataFrame', 'symbol': symbol, 'market': market, 'timeframe': timeframe})
         except Exception as e:
             self.logger.log_error(f"Error uploading new DataFrame for {symbol}/{market}/{timeframe}: {e}", context={'mod': 'TransformationTaLib', 'action': 'UploadNewDataFrameError', 'symbol': symbol, 'market': market, 'timeframe': timeframe})
+
+
+if __name__ == "__main__":
+    # Initialize the TransformationTaLib class
+    transformation = TransformationTaLib()
+    # Test the method to read and process on one month
+    gcs_paths = transformation.bucket_manager.list_files("Raw/binance-data-vision/historical/BTCUSDT/futures/klines/30m/2024/01")
+
+    try:
+        # Read the parquet file
+        df = transformation.download_and_aggregate_klines(gcs_paths)
+
+        if df.empty:
+            print("No data extracted from the file.")
+        else:
+            print("Data extracted successfully.")
+            print(df)
+
+            ta_indicator_controller = TAIndicatorController(df)
+
+            computed_df = ta_indicator_controller.compute_custom_indicators(transformation.custom_indicators)
+
+            # Define output path for the computed indicators
+            output_path = f"Transformed/cryptos/test_symbol/test_market/bars/time-bars/test_timeframe/data_transformed.parquet"
+
+            # Validation of the computed DataFrame
+            # Include custom indicators in the required columns if needed
+            required_columns = ['open', 'timestamp', 'high', 'low', 'close', 'volume','date']
+
+            # Define data type checks for mandatory columns and custom indicators
+            data_type_checks = {
+                'open': 'float64',
+                'timestamp': 'datetime64[ns]',
+                'high': 'float64',
+                'low': 'float64',
+                'close': 'float64',
+                'volume': 'float64'
+            }
+            merge_mapping = {'date': 'timestamp'}
+
+
+
+        # Initialize DataFrameVerificationController for validation
+            verification_controller = DataFrameVerificationController(
+                required_columns=required_columns,
+                data_type_checks=data_type_checks,
+                merge_mapping=merge_mapping
+            )
+
+            # Validate the DataFrame
+            validated_df = verification_controller.validate_and_transform_dataframe(computed_df, clean_data=True)
+
+            # Proceed to upload the validated DataFrame
+            if not validated_df.empty:
+                transformation.bucket_manager.upload_dataframe_to_gcs(validated_df, output_path, file_format='parquet')
+                print(f"Uploaded transformed DataFrame to: {output_path}")
+            else:
+                print("Validated DataFrame is empty, not uploading.")
+
+
+    except Exception as e:
+        transformation.logger.log_error(f"Error during transformation: {e}", context={'mod': 'TransformationTaLib', 'action': 'MainTestError'})
