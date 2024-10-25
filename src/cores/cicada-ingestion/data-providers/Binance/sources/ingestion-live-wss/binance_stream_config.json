@@ -41,7 +41,7 @@
   },
   "trade": {
     "required_columns": [
-      "trade_id", "price", "quantity", "buyer_order_id", "seller_order_id", "timestamp", "is_market_maker"
+      "trade_id", "price", "quantity", "date", "is_market_maker"
     ],
     "data_type_checks": {
       "trade_id": "int64",
@@ -49,7 +49,7 @@
       "quantity": "float64",
       "buyer_order_id": "int64",
       "seller_order_id": "int64",
-      "timestamp": "datetime64[ns]",
+      "date": "datetime64[ns]",
       "is_market_maker": "bool"
     }
   },

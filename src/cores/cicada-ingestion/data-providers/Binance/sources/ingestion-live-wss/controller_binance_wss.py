@@ -194,9 +194,7 @@ class BinanceWSSClient(WSSClient):
             'trade_id': int(data['t']),
             'price': float(data['p']),
             'quantity': float(data['q']),
-            'buyer_order_id': int(data['b']),
-            'seller_order_id': int(data['a']),
-            'timestamp': pd.to_datetime(data['T'], unit='ms'),
+            'date': pd.to_datetime(data['T'], unit='ms'),
             'is_market_maker': data['m']
         }])
         logger.log_info("Processed trade update",
