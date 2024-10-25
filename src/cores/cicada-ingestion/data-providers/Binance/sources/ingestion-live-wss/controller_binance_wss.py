@@ -227,6 +227,7 @@ class BinanceWSSClient(WSSClient):
 
     def handle_mini_ticker_update(self, data):
         df = pd.DataFrame([{
+            'event_date': pd.to_datetime(data['E'], unit='ms'),
             'symbol': data['s'],
             'close_price': float(data['c']),
             'open_price': float(data['o']),

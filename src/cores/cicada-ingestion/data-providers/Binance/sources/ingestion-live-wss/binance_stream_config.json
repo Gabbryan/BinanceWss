@@ -66,9 +66,10 @@
   },
   "24hrMiniTicker": {
     "required_columns": [
-      "symbol", "close_price", "open_price", "high_price", "low_price", "base_asset_volume", "quote_asset_volume"
+     "event_date", "symbol", "close_price", "open_price", "high_price", "low_price", "base_asset_volume", "quote_asset_volume"
     ],
     "data_type_checks": {
+      "event_date": "datetime64[ns]",
       "symbol": "object",
       "close_price": "float64",
       "open_price": "float64",
