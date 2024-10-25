@@ -44,7 +44,7 @@ wss-binance:
   symbols:
     - BTCUSDT
   streams:
-    - depth
+    - kline_5m
 
 
 

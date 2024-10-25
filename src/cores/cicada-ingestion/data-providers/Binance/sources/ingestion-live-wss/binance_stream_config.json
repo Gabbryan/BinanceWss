@@ -1,0 +1,134 @@
+{
+  "kline": {
+    "required_columns": [
+      "event_date", "symbol", "interval", "start_date", "close_date", "first_trade_id",
+      "last_trade_id", "open", "close", "high", "low", "volume", "number_of_trades",
+      "quote_asset_volume", "taker_buy_base_asset_volume", "taker_buy_quote_asset_volume", "is_final"
+    ],
+    "data_type_checks": {
+      "event_date": "datetime64[ns]",
+      "symbol": "object",
+      "interval": "object",
+      "start_time": "datetime64[ns]",
+      "close_time": "datetime64[ns]",
+      "first_trade_id": "int64",
+      "last_trade_id": "int64",
+      "open": "float64",
+      "close": "float64",
+      "high": "float64",
+      "low": "float64",
+      "volume": "float64",
+      "number_of_trades": "int64",
+      "quote_asset_volume": "float64",
+      "taker_buy_base_asset_volume": "float64",
+      "taker_buy_quote_asset_volume": "float64",
+      "is_final": "bool"
+    }
+  },
+  "aggTrade": {
+    "required_columns": [
+      "aggregate_trade_id", "price", "quantity", "first_trade_id", "last_trade_id", "trade_date", "is_market_maker"
+    ],
+    "data_type_checks": {
+      "aggregate_trade_id": "int64",
+      "price": "float64",
+      "quantity": "float64",
+      "first_trade_id": "int64",
+      "last_trade_id": "int64",
+      "trade_time": "datetime64[ns]",
+      "is_market_maker": "bool"
+    }
+  },
+  "trade": {
+    "required_columns": [
+      "trade_id", "price", "quantity", "buyer_order_id", "seller_order_id", "timestamp", "is_market_maker"
+    ],
+    "data_type_checks": {
+      "trade_id": "int64",
+      "price": "float64",
+      "quantity": "float64",
+      "buyer_order_id": "int64",
+      "seller_order_id": "int64",
+      "timestamp": "datetime64[ns]",
+      "is_market_maker": "bool"
+    }
+  },
+  "depthUpdate": {
+    "required_columns": [
+      "symbol", "update_id", "bids", "asks"
+    ],
+    "data_type_checks": {
+      "symbol": "object",
+      "update_id": "int64",
+      "bids": "object",
+      "asks": "object"
+    }
+  },
+  "24hrMiniTicker": {
+    "required_columns": [
+      "symbol", "close_price", "open_price", "high_price", "low_price", "base_asset_volume", "quote_asset_volume"
+    ],
+    "data_type_checks": {
+      "symbol": "object",
+      "close_price": "float64",
+      "open_price": "float64",
+      "high_price": "float64",
+      "low_price": "float64",
+      "base_asset_volume": "float64",
+      "quote_asset_volume": "float64"
+    }
+  },
+  "24hrTicker": {
+    "required_columns": [
+      "symbol", "price_change", "price_change_percent", "weighted_avg_price", "last_price", "open_price",
+      "high_price", "low_price", "base_asset_volume", "quote_asset_volume"
+    ],
+    "data_type_checks": {
+      "symbol": "object",
+      "price_change": "float64",
+      "price_change_percent": "float64",
+      "weighted_avg_price": "float64",
+      "last_price": "float64",
+      "open_price": "float64",
+      "high_price": "float64",
+      "low_price": "float64",
+      "base_asset_volume": "float64",
+      "quote_asset_volume": "float64"
+    }
+  },
+  "bookTicker": {
+    "required_columns": [
+      "symbol", "best_bid_price", "best_bid_qty", "best_ask_price", "best_ask_qty"
+    ],
+    "data_type_checks": {
+      "symbol": "object",
+      "best_bid_price": "float64",
+      "best_bid_qty": "float64",
+      "best_ask_price": "float64",
+      "best_ask_qty": "float64"
+    }
+  },
+  "avgPrice": {
+    "required_columns": [
+      "symbol", "average_price", "interval", "trade_time"
+    ],
+    "data_type_checks": {
+      "symbol": "object",
+      "average_price": "float64",
+      "interval": "object",
+      "trade_time": "datetime64[ns]"
+    }
+  },
+  "depth": {
+    "required_columns": [
+      "symbol", "first_update_id", "final_update_id", "bids", "asks"
+    ],
+    "data_type_checks": {
+      "symbol": "object",
+      "first_update_id": "int64",
+      "final_update_id": "int64",
+      "bids": "object",
+      "asks": "object"
+    }
+  }
+}
