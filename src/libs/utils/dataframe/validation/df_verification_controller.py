@@ -1,9 +1,8 @@
 import numpy as np
 import pandas as pd
 from scipy import stats
-
 from src.commons.logs.logging_controller import LoggingController
-
+import re
 
 class DataFrameVerificationController:
     def __init__(self, required_columns=None, data_type_checks=None, schema=None, merge_mapping=None):
@@ -45,11 +44,13 @@ class DataFrameVerificationController:
         return df
 
     def convert_dates_to_timestamps(self, df, context=None):
-        date_columns = [col for col in df.columns if 'date' in col.lower()]
+        # Use regex to match columns with the word "date" but ensure it matches the pattern for actual date columns
+        date_columns = [col for col in df.columns if re.search(r'\bdate\b', col, re.IGNORECASE)]
         renamed_columns = {}
 
         for col in date_columns:
             try:
+                # Check if the column can be converted to datetime
                 df[col] = pd.to_datetime(df[col], errors='coerce', utc=True)
                 df[col] = df[col].apply(lambda x: int(x.timestamp()) if not pd.isnull(x) else np.nan)
                 new_col_name = col.replace("date", "timestamp").replace("Date", "Timestamp")
@@ -107,9 +108,6 @@ class DataFrameVerificationController:
             self.logger.log_info("Handled outliers using Z-score method.", context)
 
         return df
-
-
-
 # Example usage of the DataFrameVerificationController for testing
 if __name__ == "__main__":
     context = {"user": "test_user", "action": "data_verification"}
@@ -128,6 +126,7 @@ if __name__ == "__main__":
         'Low': [0.9, 1.9, 2.9],
         'Close': [1.1, 2.1, 3.1],
         'Volume': [100, 200, 300],
+        'update_id': [1, 2, 3],
         'Data': [{'key1': 'value1'}, {'key2': 'value2'}, {'key3': 'value3'}]  # Contains dictionaries
     })
     required_columns = ['Open', 'High', 'Low', 'Close', 'Volume', 'Date']
