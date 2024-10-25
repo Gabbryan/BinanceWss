@@ -44,8 +44,12 @@ class DataFrameVerificationController:
         return df
 
     def convert_dates_to_timestamps(self, df, context=None):
-        # Use regex to match columns with the word "date" but ensure it matches the pattern for actual date columns
-        date_columns = [col for col in df.columns if re.search(r'\bdate\b', col, re.IGNORECASE)]
+        # Use regex to match columns with "date" as a substring (case insensitive)
+        date_columns = [
+            col for col in df.columns
+            if re.search(r'.*date.*', col, re.IGNORECASE) and
+               'update' not in col.lower()
+        ]
         renamed_columns = {}
 
         for col in date_columns:
@@ -53,7 +57,9 @@ class DataFrameVerificationController:
                 # Check if the column can be converted to datetime
                 df[col] = pd.to_datetime(df[col], errors='coerce', utc=True)
                 df[col] = df[col].apply(lambda x: int(x.timestamp()) if not pd.isnull(x) else np.nan)
-                new_col_name = col.replace("date", "timestamp").replace("Date", "Timestamp")
+
+                # Replace "date" with "timestamp" in a case-insensitive manner
+                new_col_name = re.sub(r'date', 'timestamp', col, flags=re.IGNORECASE)
                 renamed_columns[col] = new_col_name
             except Exception as e:
                 self.logger.log_error(f"Error converting {col} to timestamp: {e}", context)
@@ -129,6 +135,18 @@ if __name__ == "__main__":
         'update_id': [1, 2, 3],
         'Data': [{'key1': 'value1'}, {'key2': 'value2'}, {'key3': 'value3'}]  # Contains dictionaries
     })
+
+    df7 = pd.DataFrame({
+        'Open': [1.0, 2.0, 3.0],
+        'High': [1.2, 2.2, 3.2],
+        'Low': [0.9, 1.9, 2.9],
+        'Close': [1.1, 2.1, 3.1],
+        'Volume': [100, 200, 300],
+        'event_date': ['2023-10-01', '2023-10-02', '2023-10-03'],  # Should be converted
+        'EventDate': ['2023-10-04', '2023-10-05', '2023-10-06'],  # Should be converted
+        'Created_date': ['2023-10-07', '2023-10-08', 'Invalid Date'],  # Should not be converted
+        'update': [1, 0, 1],  # Should not be converted
+    })
     required_columns = ['Open', 'High', 'Low', 'Close', 'Volume', 'Date']
     data_type_checks = {'Open': 'float64', 'High': 'float64', 'Close': 'float64', 'Volume': 'int64'}
     merge_mapping = {'Open': 'Something', 'High': 'Else'}
@@ -157,3 +175,7 @@ if __name__ == "__main__":
     print(df5)
     df6 = df_verification_controller.validate_and_transform_dataframe(df6, clean_data=True, context=context)
     print(df6)
+
+    df7 = df_verification_controller.validate_and_transform_dataframe(df7, clean_data=True, context=context)
+    print(df7)
+
