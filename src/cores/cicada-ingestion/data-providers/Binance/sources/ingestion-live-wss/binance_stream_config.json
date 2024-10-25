@@ -155,10 +155,11 @@
   },
   "depth": {
     "required_columns": [
-      "symbol", "first_update_id", "final_update_id", "bids", "asks"
+      "symbol","event_date", "first_update_id", "final_update_id", "bids", "asks"
     ],
     "data_type_checks": {
       "symbol": "object",
+      "event_date": "datetime64[ns]",
       "first_update_id": "int64",
       "final_update_id": "int64",
       "bids": "object",

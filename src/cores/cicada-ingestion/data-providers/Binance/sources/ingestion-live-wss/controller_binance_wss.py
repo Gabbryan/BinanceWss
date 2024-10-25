@@ -214,6 +214,7 @@ class BinanceWSSClient(WSSClient):
         """
         df = pd.DataFrame([{
             'symbol': data['s'],
+            'event_date' : pd.to_datetime(data['E'], unit='ms'),
             'update_id': data['u'],
             'bids': {price: qty for price, qty in zip(data['b'][0], data['b'][1])},  # Convert bids to dictionary
             'asks': {price: qty for price, qty in zip(data['a'][0], data['a'][1])}   # Convert asks to dictionary
@@ -316,6 +317,7 @@ class BinanceWSSClient(WSSClient):
     def handle_diff_depth_update(self, data):
         df = pd.DataFrame([{
             'symbol': data['s'],
+            'event_date': pd.to_datetime(data['E'], unit='ms'),
             'first_update_id': data['U'],
             'final_update_id': data['u'],
             'bids': data['b'],
