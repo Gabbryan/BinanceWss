@@ -140,7 +140,7 @@ class BinanceDataVision:
         formatted_date = date.strftime("%Y-%m-%d")
 
         self.logger.log_info(f"Processing {symbol} for {formatted_date}.", context={'mod': 'BinanceDataVision', 'action': 'ProcessTask'})
-        market = self._get_market(base_url)
+        market = self._get_market(url)
 
         params = {
             'symbol': symbol,
@@ -159,17 +159,13 @@ class BinanceDataVision:
 
         gcs_paths = self.GCSController.generate_gcs_paths(params, template)
 
+        df = self.download_and_extract(url, symbol, date, timeframe)
+
         for gcs_path in gcs_paths:
             if self.GCSController.check_file_exists(gcs_path):
                 self.logger.log_info(f"File {gcs_path} already exists. Skipping download and upload.", context={'mod': 'BinanceDataVision', 'action': 'CheckFileExists'})
                 return
-
-        df = self.download_and_extract(url, symbol, date, timeframe)
-
-            for gcs_path in gcs_paths:
-                self.GCSController.upload_dataframe_to_gcs(df, gcs_path)
-                self.logger.log_info(f"Data uploaded to {gcs_path}", context={'mod': 'BinanceDataVision', 'action': 'UploadData'})
-
+            
     def download_and_extract(self, base_url, symbol, date, timeframe=None):
 
         formatted_date = date.strftime("%Y-%m-%d")
