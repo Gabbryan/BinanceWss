@@ -5,7 +5,7 @@ import pandas as pd
 
 from src.commons.env_manager.env_controller import EnvController
 from src.commons.logs.logging_controller import LoggingController
-
+import pandas_ta as ta
 # Initialize the logging controller
 logger = LoggingController("TAIndicatorController")
 
