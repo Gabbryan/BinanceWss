@@ -276,6 +276,7 @@ class TransformationTaLib:
             start_date = latest_end_date + pd.Timedelta(days=1) if latest_end_date else None
 
             df_new = self.download_and_aggregate_klines(file_list)
+            print("DF_NEW", df_new)
             if df_new.empty:
                 self.logger.log_warning(f"No new data available for {symbol}, {market}, {timeframe}.")
                 return
@@ -285,6 +286,8 @@ class TransformationTaLib:
                 df_combined = pd.concat([df_existing, df_new], ignore_index=True)
             else:
                 df_combined = df_new
+
+            print("DF_COMBINED", df_combined)
 
             # Remove existing indicator columns before recalculation
             indicators_to_remove = [ind['name'] for ind in self.custom_indicators if ind['name'] in df_combined.columns]
@@ -306,6 +309,9 @@ class TransformationTaLib:
             self.logger.log_error(f"Error processing incomplete data for {symbol} / {market} / {timeframe}: {e}")
 
     def _process_complete_data(self, symbol, market, timeframe, file_list, df_existing, latest_end_date):
+        """
+        Process complete data and recompute indicators if necessary.
+        """
         try:
             start_date = latest_end_date + pd.Timedelta(days=1) if latest_end_date else None
 
