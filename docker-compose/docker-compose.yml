@@ -11,25 +11,26 @@ services:
       - ENV=development
     command: [ "python", "main.py" ]
 
-  ingestion-binance-stream-klines:
-    build:
-      context: ..
-      dockerfile: ./docker/dsol.Dockerfile
-    volumes:
-      - ../src/cores/cicada-ingestion/data-providers/Binance/sources/ingestion-live-wss/main.py:/app/main.py
-      - ../src/cores/cicada-ingestion/data-providers/Binance/sources/ingestion-live-wss/controller_binance_wss.py:/app/controller_binance_wss.py
-    environment:
-      - PYTHONUNBUFFERED=1
-      - ENV=development
-    command: [ "python3", "main.py" ]
-  transformation-indicators-ta-lib-time-bar:
-    build:
-      context: ..
-      dockerfile: ./docker/dsol.Dockerfile
-    volumes:
-      - ../src/cores/cicada-transformation/indicators/ta-lib/main.py:/app/main.py
-      - ../src/cores/cicada-transformation/indicators/ta-lib/talib_processing_controller.py:/app/talib_processing_controller.py
-    environment:
-      - PYTHONUNBUFFERED=1
-      - ENV=development
-    command: [ "python3", "main.py" ]
+#  ingestion-binance-stream-klines:
+#    build:
+#      context: ..
+#      dockerfile: ./docker/dsol.Dockerfile
+#    volumes:
+#      - ../src/cores/cicada-ingestion/data-providers/Binance/sources/ingestion-live-wss/main.py:/app/main.py
+#      - ../src/cores/cicada-ingestion/data-providers/Binance/sources/ingestion-live-wss/controller_binance_wss.py:/app/controller_binance_wss.py
+#    environment:
+#      - PYTHONUNBUFFERED=1
+#      - ENV=development
+#    command: [ "python3", "main.py" ]
+#
+#  transformation-indicators-ta-lib-time-bar:
+#    build:
+#      context: ..
+#      dockerfile: ./docker/dsol.Dockerfile
+#    volumes:
+#      - ../src/cores/cicada-transformation/indicators/ta-lib/main.py:/app/main.py
+#      - ../src/cores/cicada-transformation/indicators/ta-lib/talib_processing_controller.py:/app/talib_processing_controller.py
+#    environment:
+#      - PYTHONUNBUFFERED=1
+#      - ENV=development
+#    command: [ "python3", "main.py" ]

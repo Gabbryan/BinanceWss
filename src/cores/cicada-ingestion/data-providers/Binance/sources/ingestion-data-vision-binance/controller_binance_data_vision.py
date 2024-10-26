@@ -39,15 +39,35 @@ class BinanceDataVision:
         """
         self.fetch_urls = []
         for symbol in self.symbols:
-            if self.stream == "aggTrades" or self.stream == "trades":
+            if self.stream == "trades":
+                self.fetch_urls.append(f"{self.base_url}spot/daily/trades/{symbol}")
+                self.fetch_urls.append(f"{self.base_url}futures/um/daily/trades/{symbol}")
+            elif self.stream == "aggTrades":
                 self.fetch_urls.append(f"{self.base_url}spot/daily/aggTrades/{symbol}")
                 self.fetch_urls.append(f"{self.base_url}futures/um/daily/aggTrades/{symbol}")
             elif self.stream == "klines":
                 for timeframe in self.timeframes:
-                    self.fetch_urls.append(f"{self.base_url}futures/um/daily/klines/{symbol}/{timeframe}")
                     self.fetch_urls.append(f"{self.base_url}spot/daily/klines/{symbol}/{timeframe}")
+                    self.fetch_urls.append(f"{self.base_url}futures/um/daily/klines/{symbol}/{timeframe}")
             elif self.stream == "bookDepth":
                 self.fetch_urls.append(f"{self.base_url}futures/um/daily/bookDepth/{symbol}")
+            elif self.stream == "bookTicker":
+                self.fetch_urls.append(f"{self.base_url}futures/um/daily/bookDepth/{symbol}")
+            elif self.stream == "indexPriceKlines":
+                self.fetch_urls.append(f"{self.base_url}futures/um/daily/bookDepth/{symbol}")
+            elif self.stream == "liquidationSnapshot":
+                self.fetch_urls.append(f"{self.base_url}futures/um/daily/bookDepth/{symbol}")
+            elif self.stream == "markPriceKlines":
+                self.fetch_urls.append(f"{self.base_url}futures/um/daily/bookDepth/{symbol}")
+            elif self.stream == "metrics":
+                self.fetch_urls.append(f"{self.base_url}futures/um/daily/bookDepth/{symbol}")
+            elif self.stream == "premiumIndexKlines":
+                self.fetch_urls.append(f"{self.base_url}futures/um/daily/bookDepth/{symbol}")
+            elif self.stream == "BVOLIndex":
+                bvol_symbol = f"{symbol[:-4]}BVOL{symbol[-4:]}"
+                self.fetch_urls.append(f"{self.base_url}option/daily/BVOLIndex/{bvol_symbol}")
+            elif self.stream == "EOHSummary":
+                self.fetch_urls.append(f"{self.base_url}option/daily/EOHSummary/{symbol}")
 
         self.logger.log_info(f"URLs defined for fetching: {len(self.fetch_urls)}", context={'mod': 'BinanceDataVision', 'action': 'DefineURLs'})
 
@@ -56,6 +76,7 @@ class BinanceDataVision:
         Download and process Binance data between specified start and end dates.
         """
         self.notifications_controller.send_process_start_message()
+
         self._define_urls_to_fetch()
 
         if start_date is None:
@@ -73,14 +94,17 @@ class BinanceDataVision:
             if self.stream == "klines":
                 for symbol in self.symbols:
                     for timeframe in self.timeframes:
-                        for base_url in self.fetch_urls:
-                            if symbol in base_url and base_url.split('/')[-1] == timeframe:
-                                tasks_by_year[year].append((base_url, symbol, timeframe, date))
+                        for fetch_url in self.fetch_urls:
+                            if symbol in fetch_url: 
+                                url_timeframe = fetch_url.split('/')[-1]
+                                if url_timeframe == timeframe: 
+                                    tasks_by_year[year].append((fetch_url, symbol, timeframe, date))
             else:
                 for symbol in self.symbols:
-                    for base_url in self.fetch_urls:
-                        if symbol in base_url:
-                            tasks_by_year[year].append((base_url, symbol, date))
+                    for fetch_url in self.fetch_urls:
+                        if self._symbol_in_url(symbol, fetch_url):
+                            tasks_by_year[year].append((fetch_url, symbol, date))
+   
 
         self.logger.log_info(f"{sum(len(tasks) for tasks in tasks_by_year.values())} tasks generated.", context={'mod': 'BinanceDataVision', 'action': 'GenerateTasks'})
 
@@ -105,15 +129,16 @@ class BinanceDataVision:
         Process an individual task (can be run in a thread).
         """
         if len(task) == 4:
-            base_url, symbol, timeframe, date = task
+            url, symbol, timeframe, date = task
         elif len(task) == 3:
-            base_url, symbol, date = task
+            url, symbol, date = task
             timeframe = None
         else:
             self.logger.log_error(f"Invalid task format: {task}", context={'mod': 'BinanceDataVision', 'action': 'ProcessTask'})
             return
 
         formatted_date = date.strftime("%Y-%m-%d")
+
         self.logger.log_info(f"Processing {symbol} for {formatted_date}.", context={'mod': 'BinanceDataVision', 'action': 'ProcessTask'})
         market = self._get_market(base_url)
 
@@ -139,26 +164,34 @@ class BinanceDataVision:
                 self.logger.log_info(f"File {gcs_path} already exists. Skipping download and upload.", context={'mod': 'BinanceDataVision', 'action': 'CheckFileExists'})
                 return
 
-        df = self.download_and_extract(base_url, symbol, date, timeframe)
-        if df is not None:
+        df = self.download_and_extract(url, symbol, date, timeframe)
+
             for gcs_path in gcs_paths:
                 self.GCSController.upload_dataframe_to_gcs(df, gcs_path)
                 self.logger.log_info(f"Data uploaded to {gcs_path}", context={'mod': 'BinanceDataVision', 'action': 'UploadData'})
 
-    def download_and_extract(self, base_url, symbol, date, timeframe):
-        """
-        Download and extract data from a ZIP file.
-        """
+    def download_and_extract(self, base_url, symbol, date, timeframe=None):
+
         formatted_date = date.strftime("%Y-%m-%d")
         try:
+            # Modify the symbol format using _symbol_in_url method if necessary
+            formatted_symbol = self._get_formatted_symbol(symbol, base_url)
+
+            # Construct the URL based on the type of data
             if "klines" in base_url and timeframe:
-                url = f"{base_url}/{symbol.upper()}-{timeframe}-{date.strftime('%Y-%m-%d')}.zip"
+                url = f"{base_url}/{formatted_symbol}-{timeframe}-{formatted_date}.zip"
+            elif "BVOLIndex" in base_url:
+                url = f"{base_url}/{formatted_symbol}-BVOLIndex-{formatted_date}.zip"
+            elif "EOHSummary" in base_url:
+                url = f"{base_url}/{formatted_symbol}-EOHSummary-{formatted_date}.zip"
             else:
-                url = f"{base_url}/{symbol.upper()}/{self.stream}/{symbol.upper()}-{self.stream}-{formatted_date}.zip"
+                url = f"{base_url}/{formatted_symbol}-{self.stream}-{formatted_date}.zip"
+
 
             self.logger.log_info(f"Downloading {url}", context={'mod': 'BinanceDataVision', 'action': 'DownloadData'})
             response = requests.get(url, allow_redirects=True)
             response.raise_for_status()
+            
             df = self.zip_controller.extract_zip_to_dataframe(response.content)
             return df
 
@@ -168,15 +201,41 @@ class BinanceDataVision:
             self.logger.log_error(f"Data extraction error for {url}: {e}", context={'mod': 'BinanceDataVision', 'action': 'ExtractionError'})
         return None
 
-    def _get_market(self, base_url):
+    def _get_market(self, url):
+
         """
         Determine the market (futures or spot) based on the base URL.
         """
-        if "futures" in base_url:
+        if "futures" in url:
             market = "futures"
-        elif "spot" in base_url:
+        elif "spot" in url:
             market = "spot"
+        elif "option" in url:
+            market = "option"
         else:
             market = "unknown"
         self.logger.log_info(f"Market determined: {market}", context={'mod': 'BinanceDataVision', 'action': 'DetermineMarket'})
         return market
+
+    def _symbol_in_url(self, symbol, url):
+        """
+        Check if a given symbol or its modified format is in the URL.
+        For BVOLIndex, convert BTCUSDT to BTCBVOLUSDT and check.
+        """
+        if self.stream == "BVOLIndex":
+            # Convert symbol to the BVOLIndex format, e.g., BTCUSDT -> BTCBVOLUSDT
+            bvol_symbol = f"{symbol[:-4]}BVOL{symbol[-4:]}"
+            return bvol_symbol in url
+        else:
+            return symbol in url
+        
+    def _get_formatted_symbol(self, symbol, base_url):
+        """
+        Helper method to format the symbol based on the base URL or stream type.
+        """
+        if "BVOLIndex" in base_url:
+            # Format symbol for BVOLIndex, e.g., BTCUSDT -> BTCBVOLUSDT
+            return f"{symbol[:-4]}BVOL{symbol[-4:]}"
+        else:
+            # Return the symbol as is for other cases
+            return symbol

@@ -1,4 +1,5 @@
 from src.commons.env_manager.env_controller import EnvController
+from src.commons.logs.logging_controller import LoggingController
 from src.commons.notifications.notifications_controller import NotificationsController
 from src.commons.logs.logging_controller import LoggingController
 from talib_processing_controller import TransformationTaLib
