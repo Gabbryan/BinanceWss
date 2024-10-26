@@ -28,6 +28,7 @@ class GCSController:
         logger.log_info(f"GCS Controller initialized with bucket: {bucket_name}", context={'mod': 'GCSController', 'action': 'Init'})
 
     def load_gcs_file_to_dataframe(self, file_path, file_format='parquet',multi_threading = False):
+
         """
         Télécharge un fichier à partir de Google Cloud Storage et le charge dans un DataFrame.
         :param file_path: Le chemin du fichier dans le bucket.
@@ -42,13 +43,9 @@ class GCSController:
             # Récupérer le blob (fichier) depuis le bucket
             blob = bucket.blob(file_path)
 
-            # if multi_threading:
-            #     # Générer un nom de fichier temporaire unique en fonction du nom du thread
-            #     tmp_uuid = uuid.uuid4()
-            #     thread_name = threading.current_thread().name
-            #     temp_file_path = f'/tmp/temp_file_{thread_name}.' + file_format
 
             temp_file_path =  self._generate_temp_file(file_format)
+
 
             # Télécharger le fichier depuis GCS
             blob.download_to_filename(temp_file_path)
@@ -216,60 +213,27 @@ class GCSController:
                 self._remove_temp_file(temp_file)
 
     def generate_gcs_paths(self, parameters, template, file_format="parquet"):
-        """
-        Generate GCS paths based on a flexible template.
-
-        :param parameters: A dictionary containing the values to populate the template (e.g., {'symbol': 'BTC', 'year_range': range(2023, 2024)}).
-        :param template: A string template for generating the GCS path. Use placeholders like {symbol}, {year}, {month}, etc.
-        :param file_format: The file format to be used in the path (default is 'parquet').
-        :return: A list of GCS paths with placeholders replaced by the actual parameter values.
-        """
-        logger.log_info(f"Generating GCS paths with template: {template} and parameters: {parameters}",
-                        context={'mod': 'GCSController', 'action': 'GeneratePaths'})
-
+        logger.log_info(f"Generating GCS paths with template: {template} and parameters: {parameters}", context={'mod': 'GCSController', 'action': 'GeneratePaths'})
         gcs_paths = []
 
         year_range = parameters.get('year_range', [])
         month_range = parameters.get('month_range', [])
-        day_range = parameters.get('day_range', [])
+        day_range = parameters.get('day_range', [1])  # Default to day 1 if not provided
         parameters['file_format'] = file_format
 
-        end_year = parameters.get('end_year', None) or parameters.get('year', None)
-        end_month = parameters.get('end_month', None) or parameters.get('month', None)
-        end_day = parameters.get('end_day', None) or parameters.get('day', None)
-
-        end_date = pd.Timestamp(year=end_year, month=end_month, day=end_day)
-
-        if year_range and month_range:
-            for year in year_range:
-                for month in month_range:
-                    for day in day_range:
-                        try:
-                            # Créer une date avec les valeurs actuelles de year, month, day
-                            current_date = pd.Timestamp(year=year, month=month, day=day)
-
-                            # Si la date dépasse la end_date, arrêter la génération de chemins
-                            if current_date > end_date:
-                                break
-
-                            parameters['year'] = int(year)
-                            parameters['month'] = int(month)
-                            parameters['day'] = int(day)
-
-                            # Générer le chemin GCS
-                            path = template.format(**parameters)
-                            gcs_paths.append(path)
-                        except ValueError:
-                            # Ignorer les dates non valides (comme le 31 février)
-                            continue
-                        except KeyError as e:
-                            logger.log_error(f"Missing key in parameters for path generation: {e}")
-        else:
-            try:
-                path = template.format(**parameters)
-                gcs_paths.append(path)
-            except KeyError as e:
-                logger.log_error(f"Missing key in parameters for path generation: {e}")
+        for year in year_range:
+            for month in month_range:
+                for day in day_range:
+                    try:
+                        parameters.update({'year': year, 'month': month, 'day': day})
+                        path = template.format(**parameters)
+                        gcs_paths.append(path)
+                    except KeyError as e:
+                        logger.log_error(f"Missing key for path generation: {e}", context={'mod': 'GCSController', 'action': 'GeneratePathsError'})
+                        continue
+                    except ValueError:
+                        logger.log_warning(f"Invalid date combination: year={year}, month={month}, day={day}", context={'mod': 'GCSController', 'action': 'GeneratePathsWarning'})
+                        continue
 
         logger.log_info(f"Generated {len(gcs_paths)} GCS paths.", context={'mod': 'GCSController', 'action': 'GeneratePathsComplete'})
         return gcs_paths

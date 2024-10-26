@@ -1,10 +1,7 @@
 import zipfile
 from io import BytesIO
-
 import pandas as pd
-
 from src.commons.logs.logging_controller import LoggingController
-
 
 class ZipController:
 
@@ -25,7 +22,6 @@ class ZipController:
         try:
             with zipfile.ZipFile(BytesIO(zip_content)) as z:
                 file_list = [name for name in z.namelist() if name.endswith(f".{file_type}")]
-
                 if not file_list:
                     raise ValueError(f"No {file_type} files found in the archive.")
 
@@ -41,13 +37,17 @@ class ZipController:
                         else:
                             raise ValueError(f"Unsupported file type: {file_type}")
                         dataframes.append(df)
-                        self.logger.log_info(f"File {file_name} successfully extracted.")
+                        self.logger.log_info(f"File {file_name} successfully extracted.", context={'mod': 'ZipController', 'action': 'ExtractFile'})
 
                 if concat_files:
+                    self.logger.log_info(f"Concatenated {len(dataframes)} files into a single DataFrame.", context={'mod': 'ZipController', 'action': 'ConcatFiles'})
                     return pd.concat(dataframes, ignore_index=True)
                 else:
                     return dataframes
 
         except zipfile.BadZipFile as e:
-            self.logger.log_error(f"Error extracting ZIP file: {e}")
+            self.logger.log_error(f"Error extracting ZIP file: {e}", context={'mod': 'ZipController', 'action': 'BadZipFile'})
             raise ValueError(f"Error extracting ZIP file: {e}")
+        except ValueError as e:
+            self.logger.log_error(f"Error during file extraction or unsupported file type: {e}", context={'mod': 'ZipController', 'action': 'FileTypeError'})
+            raise

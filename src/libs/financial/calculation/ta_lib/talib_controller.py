@@ -8,6 +8,7 @@ from src.commons.env_manager.env_controller import EnvController
 from src.commons.logs.logging_controller import LoggingController
 from src.libs.utils.sys.threading.controller_threading import ThreadController
 
+
 # Initialize the logging controller
 logger = LoggingController("TAIndicatorController")
 

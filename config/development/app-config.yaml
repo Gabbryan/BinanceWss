@@ -44,4 +44,8 @@ wss-binance:
   symbols:
     - BTCUSDT
   streams:
-    - depth
+    - trade
+
+
+
+

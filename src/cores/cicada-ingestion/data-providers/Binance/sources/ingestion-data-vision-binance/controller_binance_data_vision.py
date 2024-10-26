@@ -1,6 +1,5 @@
 import itertools
 from datetime import datetime, timedelta
-
 import pandas as pd
 import requests
 
@@ -17,14 +16,12 @@ class BinanceDataVision:
         """
         Initialize the BinanceDataVision class with request limits, environment settings, logging,
         and necessary controllers.
-
-        :param request_limit: Number of allowed requests within the limit.
-        :param request_interval: Time interval between requests in seconds.
         """
         self.request_limit = request_limit
         self.request_interval = request_interval
         self.EnvController = EnvController()
         self.logger = LoggingController("BinanceDataVision")
+        self.logger.log_info("Initializing BinanceDataVision", context={'mod': 'BinanceDataVision', 'action': 'Init'})
         self.zip_controller = ZipController()
         self.base_url = self.EnvController.get_yaml_config('Binance-data-vision', 'base_url')
         self.bucket_name = self.EnvController.get_yaml_config('Binance-data-vision', 'bucket')
@@ -72,13 +69,11 @@ class BinanceDataVision:
             elif self.stream == "EOHSummary":
                 self.fetch_urls.append(f"{self.base_url}option/daily/EOHSummary/{symbol}")
 
+        self.logger.log_info(f"URLs defined for fetching: {len(self.fetch_urls)}", context={'mod': 'BinanceDataVision', 'action': 'DefineURLs'})
 
     def download_and_process_data(self, start_date=None, end_date=None):
         """
         Download and process Binance data between specified start and end dates.
-
-        :param start_date: The start date for data download.
-        :param end_date: The end date for data download.
         """
         self.notifications_controller.send_process_start_message()
 
@@ -90,7 +85,6 @@ class BinanceDataVision:
             end_date = datetime.today() - timedelta(days=1)
 
         dates = pd.date_range(start_date, end_date, freq="D")
-
         tasks_by_year = {}
         for date in dates:
             year = date.year
@@ -110,21 +104,19 @@ class BinanceDataVision:
                     for fetch_url in self.fetch_urls:
                         if self._symbol_in_url(symbol, fetch_url):
                             tasks_by_year[year].append((fetch_url, symbol, date))
+   
 
-        self.logger.log_info(f"{sum(len(tasks) for tasks in tasks_by_year.values())} tasks generated.")
+        self.logger.log_info(f"{sum(len(tasks) for tasks in tasks_by_year.values())} tasks generated.", context={'mod': 'BinanceDataVision', 'action': 'GenerateTasks'})
 
         for year, tasks in tasks_by_year.items():
             self.process_tasks_with_threads(tasks)
-            self.logger.log_info(f"Year {year} processed successfully.")
+            self.logger.log_info(f"Year {year} processed successfully.", context={'mod': 'BinanceDataVision', 'action': 'ProcessYear'})
 
         self.notifications_controller.send_process_end_message()
-
 
     def process_tasks_with_threads(self, tasks):
         """
         Process tasks using threading to speed up the download and processing.
-
-        :param tasks: A list of tasks to be processed.
         """
         for task in tasks:
             self.thread_controller.add_thread(self, "process_task", task)
@@ -135,8 +127,6 @@ class BinanceDataVision:
     def process_task(self, task):
         """
         Process an individual task (can be run in a thread).
-
-        :param task: A single task containing the base URL, symbol, timeframe (optional), and date.
         """
         if len(task) == 4:
             url, symbol, timeframe, date = task
@@ -144,12 +134,13 @@ class BinanceDataVision:
             url, symbol, date = task
             timeframe = None
         else:
-            self.logger.log_error(f"Invalid task format: {task}")
+            self.logger.log_error(f"Invalid task format: {task}", context={'mod': 'BinanceDataVision', 'action': 'ProcessTask'})
             return
 
         formatted_date = date.strftime("%Y-%m-%d")
-        self.logger.log_info(f"Processing {symbol} for {formatted_date}.")
-        market = self._get_market(url)
+
+        self.logger.log_info(f"Processing {symbol} for {formatted_date}.", context={'mod': 'BinanceDataVision', 'action': 'ProcessTask'})
+        market = self._get_market(base_url)
 
         params = {
             'symbol': symbol,
@@ -163,7 +154,6 @@ class BinanceDataVision:
             params['timeframe'] = timeframe
             params['bar'] = 'klines'
             template = "Raw/binance-data-vision/historical/{symbol}/{market}/{stream}/{timeframe}/{year}/{month:02d}/{day:02d}/data.parquet"
-
         else:
             template = "Raw/binance-data-vision/historical/{symbol}/{market}/{stream}/{year}/{month:02d}/{day:02d}/data.parquet"
 
@@ -171,25 +161,17 @@ class BinanceDataVision:
 
         for gcs_path in gcs_paths:
             if self.GCSController.check_file_exists(gcs_path):
-                self.logger.log_info(f"File {gcs_path} already exists. Skipping download and upload.")
+                self.logger.log_info(f"File {gcs_path} already exists. Skipping download and upload.", context={'mod': 'BinanceDataVision', 'action': 'CheckFileExists'})
                 return
 
         df = self.download_and_extract(url, symbol, date, timeframe)
-        if df is not None:
+
             for gcs_path in gcs_paths:
                 self.GCSController.upload_dataframe_to_gcs(df, gcs_path)
+                self.logger.log_info(f"Data uploaded to {gcs_path}", context={'mod': 'BinanceDataVision', 'action': 'UploadData'})
 
     def download_and_extract(self, base_url, symbol, date, timeframe=None):
-        """
-        Download and extract data from a ZIP file.
 
-        :param base_url: The base URL for data download.
-        :param symbol: The symbol for which data is being downloaded.
-        :param date: The date for which data is being downloaded.
-        :param timeframe: The timeframe for klines data (optional).
-
-        :return: A pandas DataFrame containing the extracted data, or None if an error occurs.
-        """
         formatted_date = date.strftime("%Y-%m-%d")
         try:
             # Modify the symbol format using _symbol_in_url method if necessary
@@ -205,7 +187,8 @@ class BinanceDataVision:
             else:
                 url = f"{base_url}/{formatted_symbol}-{self.stream}-{formatted_date}.zip"
 
-            self.logger.log_info(f"Downloading {url}")
+
+            self.logger.log_info(f"Downloading {url}", context={'mod': 'BinanceDataVision', 'action': 'DownloadData'})
             response = requests.get(url, allow_redirects=True)
             response.raise_for_status()
             
@@ -213,19 +196,15 @@ class BinanceDataVision:
             return df
 
         except requests.exceptions.RequestException as e:
-            self.logger.log_error(f"Request error for {url}: {e}")
+            self.logger.log_error(f"Request error for {url}: {e}", context={'mod': 'BinanceDataVision', 'action': 'DownloadError'})
         except ValueError as e:
-            self.logger.log_error(f"Data extraction error for {url}: {e}")
+            self.logger.log_error(f"Data extraction error for {url}: {e}", context={'mod': 'BinanceDataVision', 'action': 'ExtractionError'})
         return None
 
-
     def _get_market(self, url):
+
         """
         Determine the market (futures or spot) based on the base URL.
-
-        :param base_url: The base URL for data download.
-
-        :return: A string representing the market type ('futures' or 'spot').
         """
         if "futures" in url:
             market = "futures"
@@ -235,6 +214,7 @@ class BinanceDataVision:
             market = "option"
         else:
             market = "unknown"
+        self.logger.log_info(f"Market determined: {market}", context={'mod': 'BinanceDataVision', 'action': 'DetermineMarket'})
         return market
 
     def _symbol_in_url(self, symbol, url):
