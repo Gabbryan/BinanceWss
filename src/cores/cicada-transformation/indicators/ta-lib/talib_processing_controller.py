@@ -157,9 +157,7 @@ class TransformationTaLib:
             output_path_prefix = f"Transformed/cryptos/{symbol}/{market}/bars/time-bars/{timeframe}/"
             existing_files = self.bucket_manager.list_files(output_path_prefix)
 
-            latest_
-            
-            = None
+            latest_end_date = None
             df_existing = pd.DataFrame()
 
             if existing_files:
@@ -170,14 +168,14 @@ class TransformationTaLib:
                 df_existing = self.bucket_manager.load_gcs_file_to_dataframe(last_file, file_format='parquet')
 
                 if latest_end_date and latest_end_date.date() == datetime.now().date():
-                    self.logger.log_info(f"File for {symbol} / {market} / {timeframe} is up to date. Checking for missing indicators.")
+                    self.logger.log_info(f"File for {symbol} / {market} / {timeframe} is up to date. Checking for missing indicators.", context={'mod': 'TransformationTaLib', 'action': 'ExistingFilesFound', 'symbol': symbol, 'market': market, 'timeframe': timeframe})
                     missing_indicators = [ind['name'] for ind in self.custom_indicators if ind['name'] not in df_existing.columns]
 
                     if not missing_indicators:
-                        self.logger.log_info(f"All indicators already present for {symbol}/{market}/{timeframe}.")
+                        self.logger.log_info(f"All indicators already present for {symbol}/{market}/{timeframe}.", context={'mod': 'TransformationTaLib', 'action': 'ExistingFilesFound', 'symbol': symbol, 'market': market, 'timeframe': timeframe})
                         return
                     else:
-                        self.logger.log_info(f"Missing indicators for {symbol}/{market}/{timeframe}: {missing_indicators}")
+                        self.logger.log_info(f"Missing indicators for {symbol}/{market}/{timeframe}: {missing_indicators}", context={'mod': 'TransformationTaLib', 'action': 'MissingIndicators', 'symbol': symbol, 'market': market, 'timeframe': timeframe})
                         self._compute_and_upload_missing_indicators(symbol, market, timeframe, df_existing, missing_indicators, last_file)
                         return
 
