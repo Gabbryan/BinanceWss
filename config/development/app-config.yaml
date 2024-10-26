@@ -2,12 +2,12 @@ Binance-data-vision:
   symbols:
     - BTCUSDT
     - ETHUSDT
-  stream: klines
+  stream: trades
   timeframes:
     - 4h
     - 30m
   bucket: production-trustia-raw-data
-  start_date: 2023-01-01
+  start_date: 2024-01-01
   end_date:
   base_url: https://data.binance.vision/data/
 
