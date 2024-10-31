@@ -45,3 +45,4 @@ services:
       - PYTHONUNBUFFERED=1
       - ENV=development
     command: [ "python3", "main.py" ]
+

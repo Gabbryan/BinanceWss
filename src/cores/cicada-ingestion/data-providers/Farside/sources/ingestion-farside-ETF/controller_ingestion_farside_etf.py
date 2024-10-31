@@ -19,9 +19,6 @@ class ControllerIngestionFarsideETF:
         self.logger.log_info("ControllerIngestionFarsideETF initialized.", context={'mod': 'ControllerIngestionFarsideETF', 'action': 'Initialize'})
 
     def clean_parentheses_values(self, df):
-        """
-        Cleans columns with parentheses indicating negative values, converting them to floats.
-        """
         parentheses_pattern = re.compile(r'^\((.*)\)$')
         numeric_cols = df.columns[df.columns != 'Date']
 
