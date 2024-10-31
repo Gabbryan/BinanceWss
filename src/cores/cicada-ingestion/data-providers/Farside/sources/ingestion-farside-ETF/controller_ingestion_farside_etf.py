@@ -1,4 +1,5 @@
 import re
+
 import pandas as pd
 
 from src.commons.env_manager.env_controller import EnvController
@@ -7,15 +8,15 @@ from src.libs.third_services.farside_data_manager.ingestors.BTC_ETFIngestor impo
 from src.libs.third_services.farside_data_manager.ingestors.ETH_ETFIngestor import EthereumETFIngestor
 from src.libs.third_services.farside_data_manager.manager import FarsideDataManager
 from src.libs.third_services.google.google_cloud_bucket.controller_gcs import GCSController
+from src.libs.utils.dataframe.validation.df_verification_controller import DataFrameVerificationController
 
-# Initialize the logging controller
-logger = LoggingController("FarsideETFIngestor")
 
 class ControllerIngestionFarsideETF:
     def __init__(self):
         self.env_manager = EnvController()
         self.gcs_module = GCSController(self.env_manager.get_env("BUCKET_NAME"))
-        logger.log_info("ControllerIngestionFarsideETF initialized.", context={'mod': 'ControllerIngestionFarsideETF', 'action': 'Initialize'})
+        self.logger = LoggingController("ControllerIngestionFarsideETF")
+        self.logger.log_info("ControllerIngestionFarsideETF initialized.", context={'mod': 'ControllerIngestionFarsideETF', 'action': 'Initialize'})
 
     def clean_parentheses_values(self, df):
         """
@@ -33,7 +34,7 @@ class ControllerIngestionFarsideETF:
         df[numeric_cols] = df[numeric_cols].astype(float)
         if 'Date' in df.columns:
             df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-        logger.log_info("Data cleaned of parentheses values.", context={'mod': 'ControllerIngestionFarsideETF', 'action': 'CleanParenthesesValues'})
+        self.logger.log_info("Data cleaned of parentheses values.", context={'mod': 'ControllerIngestionFarsideETF', 'action': 'CleanParenthesesValues'})
         return df
 
     def run_daily_tasks(self):
@@ -44,7 +45,20 @@ class ControllerIngestionFarsideETF:
         manager.register_ingestor(EthereumETFIngestor())
         manager.run()
 
-        total_uploaded = 0
+        # Define configurations for Bitcoin and Ethereum DataFrames
+        config_bitcoin = {
+            'required_columns': ["Date", "IBIT", "FBTC", "BITB", "ARKB", "BTCO", "EZBC", "BRRR", "HODL", "BTCW", "GBTC", "BTC", "Total"],
+            'data_type_checks': {"IBIT": "float64", "FBTC": "float64", "BITB": "float64"}
+        }
+        config_ethereum = {
+            'required_columns': ["Date", "ETHA", "FETH", "ETHW", "CETH", "ETHV", "QETH", "EZET", "ETHE", "ETH"],
+            'data_type_checks': {
+                "ETHA": "float64", "FETH": "float64", "ETHW": "float64", "CETH": "float64",
+                "ETHV": "float64", "QETH": "float64", "EZET": "float64", "ETHE": "float64", "ETH": "float64"
+            }
+        }
+
+
         for ingestor in manager.ingestors:
             symbol = ingestor.__class__.__name__.replace("Ingestor", "")
             df = ingestor.data
@@ -59,20 +73,30 @@ class ControllerIngestionFarsideETF:
                 template = "Raw/farside/{symbol}/{year}/{month:02d}/data.parquet"
                 paths = self.gcs_module.generate_gcs_paths(params, template)
 
-                for gcs_path in paths:
-                    year = int(gcs_path.split('/')[-3])
-                    month = int(gcs_path.split('/')[-2])
-                    month_df = df[(df["Year"] == year) & (df["Month"] == month)].drop(columns=["Year", "Month"])
-                    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+            for gcs_path in paths:
+                year = int(gcs_path.split('/')[-3])
+                month = int(gcs_path.split('/')[-2])
+                month_df = df[(df["Year"] == year) & (df["Month"] == month)].drop(columns=["Year", "Month"])
+                # Determine configuration based on the symbol
+                if symbol == "BitcoinETF":
                     cleaned_month_df = self.clean_parentheses_values(month_df)
+                    verification_controller = DataFrameVerificationController(**config_bitcoin)
+                elif symbol == "EthereumETF":
+                    verification_controller = DataFrameVerificationController(**config_ethereum)
+                else:
+                    self.logger.log_warning(f"No configuration found for symbol: {symbol}", context={'mod': 'ControllerIngestionFarsideETF', 'action': 'NoConfigFound'})
+                    continue
 
-                    if not cleaned_month_df.empty:
-                        try:
-                            self.gcs_module.upload_dataframe_to_gcs(cleaned_month_df, gcs_path)
-                            total_uploaded += 1
-                            logger.log_info(f"Uploaded data for {symbol} {year}-{month:02d} to GCS.", context={'mod': 'GCSController', 'action': 'UploadToGCS'})
-                        except Exception as e:
-                            logger.log_error(f"Error uploading {symbol} data for {year}-{month:02d}: {e}", context={'mod': 'GCSController', 'action': 'UploadError'})
-            else:
-                logger.log_warning(f"No data available to process for symbol: {symbol}", context={'mod': 'ControllerIngestionFarsideETF', 'action': 'NoData'})
+                if df is not None and not df.empty:
+                    # Apply verification and transformation
+                    cleaned_month_df = verification_controller.validate_and_transform_dataframe(cleaned_month_df, clean_data=True)
+
+                if not cleaned_month_df.empty:
+                            try:
+                                self.gcs_module.upload_dataframe_to_gcs(cleaned_month_df, gcs_path)
+                                self.logger.log_info(f"Uploaded data for {symbol} {year}-{month:02d} to GCS.", context={'mod': 'GCSController', 'action': 'UploadToGCS'})
+                            except Exception as e:
+                                self.logger.log_error(f"Error uploading {symbol} data for {year}-{month:02d}: {e}", context={'mod': 'GCSController', 'action': 'UploadError'})
+                else:
+                    self.logger.log_warning(f"No data available to process for symbol: {symbol}", context={'mod': 'ControllerIngestionFarsideETF', 'action': 'NoData'})
 
