@@ -1,4 +1,4 @@
-Binance-data-vision:
+$Binance-data-vision:
   symbols:
     - BTCUSDT
     - ETHUSDT
@@ -39,14 +39,10 @@ Ta-lib:
     { 'name': 'psar', 'params': { } },  # Parabolic SAR
     { 'name': 'willr', 'params': { 'length': 14 } }  # Williams %R
   ]
+  
 wss-binance:
   bucket: production-trustia-raw-data
   symbols:
     - BTCUSDT
   streams:
     - depth@100ms
-
-
-
-
-
