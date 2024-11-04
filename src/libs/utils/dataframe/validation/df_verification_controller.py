@@ -101,12 +101,7 @@ class DataFrameVerificationController:
         return df
 
     def validate_and_transform_dataframe(self, df, clean_data=False, fill_na_value=None, handle_outliers=False):
-        context = {
-            "mod": "DataFrameVerificationController",
-            "user": "system",
-            "action": "Validating and transforming DataFrame",
-            "system": "validate_and_transform_dataframe"
-        }
+
         df = self.verify_and_fix_columns(df)
         df = self.merge_columns(df)
         df = self.verify_and_fix_data_types(df)

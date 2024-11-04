@@ -59,25 +59,24 @@ class ControllerIngestionFarsideETF:
         for ingestor in manager.ingestors:
             symbol = ingestor.__class__.__name__.replace("Ingestor", "")
             df = ingestor.data
-
-            # Further processing
-            df["Year"] = df["Date"].dt.year
-            df["Month"] = df["Date"].dt.month
-            params = {
-                'symbol': symbol,
-                'year_range': range(min(df["Year"]), max(df["Year"]) + 1),
-                'month_range': range(min(df["Month"]), max(df["Month"]) + 1)
-            }
-            template = "Raw/farside/{symbol}/{year}/{month:02d}/data.parquet"
-            paths = self.gcs_module.generate_gcs_paths(params, template)
+            if df is not None and not df.empty:
+                df["Year"] = df["Date"].dt.year
+                df["Month"] = df["Date"].dt.month
+                params = {
+                    'symbol': symbol,
+                    'year_range': range(min(df["Year"]), max(df["Year"]) + 1),
+                    'month_range': range(min(df["Month"]), max(df["Month"]) + 1)
+                }
+                template = "Raw/farside/{symbol}/{year}/{month:02d}/data.parquet"
+                paths = self.gcs_module.generate_gcs_paths(params, template)
 
             for gcs_path in paths:
                 year = int(gcs_path.split('/')[-3])
                 month = int(gcs_path.split('/')[-2])
                 month_df = df[(df["Year"] == year) & (df["Month"] == month)].drop(columns=["Year", "Month"])
-                cleaned_month_df = self.clean_parentheses_values(month_df)
                 # Determine configuration based on the symbol
                 if symbol == "BitcoinETF":
+                    cleaned_month_df = self.clean_parentheses_values(month_df)
                     verification_controller = DataFrameVerificationController(**config_bitcoin)
                 elif symbol == "EthereumETF":
                     verification_controller = DataFrameVerificationController(**config_ethereum)
@@ -87,7 +86,7 @@ class ControllerIngestionFarsideETF:
 
                 if df is not None and not df.empty:
                     # Apply verification and transformation
-                    cleaned_month_df = verification_controller.validate_and_transform_dataframe(cleaned_month_df, clean_data=True, context={'symbol': symbol})
+                    cleaned_month_df = verification_controller.validate_and_transform_dataframe(cleaned_month_df, clean_data=True)
 
                 if not cleaned_month_df.empty:
                             try:
@@ -97,3 +96,4 @@ class ControllerIngestionFarsideETF:
                                 self.logger.log_error(f"Error uploading {symbol} data for {year}-{month:02d}: {e}", context={'mod': 'GCSController', 'action': 'UploadError'})
                 else:
                     self.logger.log_warning(f"No data available to process for symbol: {symbol}", context={'mod': 'ControllerIngestionFarsideETF', 'action': 'NoData'})
+

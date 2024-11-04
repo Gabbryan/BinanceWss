@@ -5,9 +5,11 @@ from controller_ingestion_farside_etf import ControllerIngestionFarsideETF as CI
 from src.commons.env_manager.env_controller import EnvController
 from src.libs.utils.sys.scheduler.scheduler_controller import SchedulerController
 
+
 controller = CIFETF()
 env_manager = EnvController()
 if __name__ == "__main__":
+
     scheduler_controller = SchedulerController()
     # Schedule a daily task at midnight
     scheduler_controller.schedule_job(controller.run_daily_tasks, schedule_type="daily", time="02:00")

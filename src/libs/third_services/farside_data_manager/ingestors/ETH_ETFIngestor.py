@@ -16,7 +16,7 @@ class EthereumETFIngestor(BaseIngestor):
 
     def process_data(self):
         """
-        Process data from the ETF page, parsing headers and rows, and handling date columns.
+        Process data from the ETF page, parsing headers and rows, handling date columns, and adding a total column.
         """
         try:
             # Find the table in the page content
@@ -52,9 +52,22 @@ class EthereumETFIngestor(BaseIngestor):
                 # Drop rows with invalid dates
                 self.data = self.data.dropna(subset=["Date"])
                 logger.log_info(f"Data processed with {self.data.shape[0]} rows after date filtering and parsing.", context={'mod': 'EthereumETFIngestor', 'action': 'ProcessData'})
+
+                # Handle parentheses indicating negative values
+                for col in self.data.columns[1:]:  # Skip the 'Date' column
+                    # Replace parentheses with a minus sign and remove any remaining parentheses
+                    self.data[col] = self.data[col].str.replace(r'\((.*)\)', r'-\1', regex=True)
+                    # Convert to numeric
+                    self.data[col] = pd.to_numeric(self.data[col], errors='coerce')
+
+                # Add a 'Total' column that sums each row's numeric values
+                self.data['Total'] = self.data.iloc[:, 1:].sum(axis=1)
+                logger.log_info("Total column added to DataFrame.", context={'mod': 'EthereumETFIngestor', 'action': 'AddTotalColumn'})
+
             else:
                 logger.log_error("Column 'Date' not found in DataFrame.", context={'mod': 'EthereumETFIngestor', 'action': 'MissingDateColumn'})
 
         except Exception as e:
             logger.log_error(f"Error processing data: {e}", context={'mod': 'EthereumETFIngestor', 'action': 'ProcessDataError'})
             raise
+

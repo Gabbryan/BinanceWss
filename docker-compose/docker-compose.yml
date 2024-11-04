@@ -1,16 +1,16 @@
 services:
-  transformation-binance-klines:
-    build:
-      context: ..
-      dockerfile: ./docker/dsol.Dockerfile
-    volumes:
-      - ../src/cores/cicada-transformation/indicators/ta-lib/main.py:/app/main.py
-      - ../src/cores/cicada-transformation/indicators/ta-lib/talib_processing_controller.py:/app/talib_processing_controller.py
-    environment:
-      - PYTHONUNBUFFERED=1
-      - ENV=development
-    command: [ "python", "main.py" ]
-
+#  transformation-binance-klines:
+#    build:
+#      context: ..
+#      dockerfile: ./docker/dsol.Dockerfile
+#    volumes:
+#      - ../src/cores/cicada-transformation/indicators/ta-lib/main.py:/app/main.py
+#      - ../src/cores/cicada-transformation/indicators/ta-lib/talib_processing_controller.py:/app/talib_processing_controller.py
+#    environment:
+#      - PYTHONUNBUFFERED=1
+#      - ENV=development
+#    command: [ "python", "main.py" ]
+#
 #  ingestion-binance-stream-klines:
 #    build:
 #      context: ..
@@ -22,7 +22,6 @@ services:
 #      - PYTHONUNBUFFERED=1
 #      - ENV=development
 #    command: [ "python3", "main.py" ]
-#
 #  transformation-indicators-ta-lib-time-bar:
 #    build:
 #      context: ..
@@ -34,3 +33,16 @@ services:
 #      - PYTHONUNBUFFERED=1
 #      - ENV=development
 #    command: [ "python3", "main.py" ]
+
+  etf-ingestion-farside:
+    build:
+      context: ..
+      dockerfile: ./docker/dsol.Dockerfile
+    volumes:
+      - ../src/cores/cicada-ingestion/data-providers/Farside/sources/ingestion-farside-ETF/main.py:/app/main.py
+      - ../src/cores/cicada-ingestion/data-providers/Farside/sources/ingestion-farside-ETF/controller_ingestion_farside_etf.py:/app/controller_ingestion_farside_etf.py
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ENV=development
+    command: [ "python3", "main.py" ]
+
