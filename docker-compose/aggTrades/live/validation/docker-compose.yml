@@ -1,0 +1,11 @@
+version: "3.8"
+
+services:
+  data-purge-service:
+    build:
+      context: ../../historical/validation/DataPurgeService
+      dockerfile: ../../../../docker/aggTrades/live/validation/Dockerfile
+    container_name: trade_scheduler_container
+    volumes:
+      - ./src:/usr/src/app
+    command: ["python", "main.py"]

@@ -1,0 +1,26 @@
+<configuration>
+    <property>
+        <name>fs.defaultFS</name>
+        <value>s3a://xtrus31</value>
+    </property>
+    <property>
+        <name>fs.s3a.access.key</name>
+        <value>AKIAS625BHFC5UUKQVYE</value>
+    </property>
+    <property>
+        <name>fs.s3a.secret.key</name>
+        <value>0NbRBW346WqQcqgk/20Z0IgGE57eEASJNZ6I7xe9</value>
+    </property>
+    <property>
+        <name>fs.s3a.endpoint</name>
+        <value>s3.amazonaws.com</value>
+    </property>
+    <property>
+        <name>fs.s3a.connection.ssl.enabled</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>fs.s3a.path.style.access</name>
+        <value>true</value>
+    </property>
+</configuration>

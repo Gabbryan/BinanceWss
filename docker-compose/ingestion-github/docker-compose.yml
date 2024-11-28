@@ -1,0 +1,15 @@
+services:
+  ingestion-github-hist:
+    build:
+      context: ./../../
+      dockerfile: docker/libs/ingestion-github/Dockerfile
+    volumes:
+      - ./../../libs/ingestion-github/src:/app/
+      - ./../../libs/ingestion-github/src/.env:/app/.env
+      - ../../../cores/cryptoETFs/historical/ingestion/logs/:/app/logs
+    container_name: ingestion-github-hist
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/key.json
+    command: ["python", "main.py"]

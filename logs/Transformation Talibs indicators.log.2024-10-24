@@ -1,0 +1,7 @@
+{"time": "2024-10-24 12:12:12,526", "level": "INFO", "message": "starting the service", "module": "N/A", "user": "N/A", "action": "N/A", "system": "N/A", "correlation_id": "0688ce04-4cd6-403a-b322-3e5be7bf8cd7"}
+{"time": "2024-10-24 12:37:21,174", "level": "INFO", "message": "starting the service", "module": "N/A", "user": "N/A", "action": "N/A", "system": "N/A", "correlation_id": "ba081e3a-cf26-4624-9348-f5f59a5c4c11"}
+{"time": "2024-10-24 13:05:39,496", "level": "INFO", "message": "Shutting down the service", "module": "N/A", "user": "N/A", "action": "N/A", "system": "N/A", "correlation_id": "7a72bfc9-bb3c-4427-a1e5-1c7a2971b518"}
+{"time": "2024-10-24 16:58:50,446", "level": "INFO", "message": "starting the service", "module": "N/A", "user": "N/A", "action": "N/A", "system": "N/A", "correlation_id": "790a6e29-89cf-483d-9bf5-c41fd8f6e031"}
+{"time": "2024-10-24 17:13:01,623", "level": "INFO", "message": "starting the service", "module": "N/A", "user": "N/A", "action": "N/A", "system": "N/A", "correlation_id": "267f61e9-fba1-4a55-b020-f5901fbd2fee"}
+{"time": "2024-10-24 17:27:21,696", "level": "INFO", "message": "starting the service", "module": "N/A", "user": "N/A", "action": "N/A", "system": "N/A", "correlation_id": "7ecad6a3-0899-4bdc-8edc-8adede096bd5"}
+{"time": "2024-10-24 18:24:43,523", "level": "INFO", "message": "Shutting down the service", "module": "N/A", "user": "N/A", "action": "N/A", "system": "N/A", "correlation_id": "f4972b8e-c3cd-4396-b956-b7d6d3b3a73c"}

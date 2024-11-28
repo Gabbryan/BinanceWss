@@ -1,0 +1,35 @@
+services:
+  ingestion-agg-trades-live:
+    build:
+      context: ./../../../../
+      dockerfile: docker/aggTrades/live/ingestion/Dockerfile
+    volumes:
+      - ./../../../../cores/aggTrades/live/ingestion/config.conf:/app/config.conf
+      - ./../../../../libs/wss-cores/binance/src:/app/
+      - ./../../../../.env:/app/.env
+      - ./../../../../logs/aggTrades/live/ingestion:/app/logs
+    container_name: aggTrades_live_ingestion_binance
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - MPLCONFIGDIR=/home/appuser/.config/matplotlib
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/key.json
+
+    command: ["python", "main.py"]
+
+  ingestion-agg-trades-histo:
+    build:
+      context: ./../../../../
+      dockerfile: docker/aggTrades/historical/ingestion/Dockerfile
+    volumes:
+      - ./../../../../cores/aggTrades/historical/ingestion/src:/app/
+      - ./../../../../.env:/app/.env
+      - ./../../../../logs/aggTrades/historical/ingestion:/app/logs
+    container_name: aggTrades_histo_ingestion_binance
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - MPLCONFIGDIR=/home/appuser/.config/matplotlib
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/key.json
+
+    command: ["python", "main_GCS.py"]

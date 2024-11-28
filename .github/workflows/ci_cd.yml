@@ -45,7 +45,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements-Binance-api.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements-binance-api.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: Install dependencies
@@ -70,7 +70,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          script: "rm -rf /home/gittrustia/cicada-ingestion-Binance/*"
+          script: "rm -rf /home/gittrustia/Cicada-binance/*"
 
       - name: Copy files
         uses: appleboy/scp-action@master
@@ -80,7 +80,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
           source: "."
-          target: "/home/gittrustia/cicada-ingestion-Binance"
+          target: "/home/gittrustia/Cicada-binance"
 
       - name: Run deploy script
         uses: appleboy/ssh-action@master
@@ -115,7 +115,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          script: "rm -rf /home/gittrustia/cicada-ingestion-Binance/*"
+          script: "rm -rf /home/gittrustia/Cicada-binance/*"
 
       - name: Copy files
         uses: appleboy/scp-action@master
@@ -125,7 +125,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
           source: "."
-          target: "/home/gittrustia/cicada-ingestion-Binance"
+          target: "/home/gittrustia/Cicada-binance"
 
       - name: Run deploy script
         uses: appleboy/ssh-action@master

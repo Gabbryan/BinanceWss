@@ -61,13 +61,13 @@ tasks = [
     ),
     (
         "get",
-        "/bapi/futures/v1/public/future/cores/get-funding-info",
+        "/bapi/futures/v1/public/future/libs/get-funding-info",
         None,
         "funding_info",
     ),
     (
         "post",
-        "/bapi/futures/v1/public/future/cores/get-funding-rate-history",
+        "/bapi/futures/v1/public/future/libs/get-funding-rate-history",
         {"symbol": "BTCUSDT", "page": 1, "rows": 42},
         "funding_rate_history",
     ),
