@@ -213,28 +213,51 @@ class GCSController:
                 self._remove_temp_file(temp_file)
 
     def generate_gcs_paths(self, parameters, template, file_format="parquet"):
-        logger.log_info(f"Generating GCS paths with template: {template} and parameters: {parameters}", context={'mod': 'GCSController', 'action': 'GeneratePaths'})
+        # Log initial avec tous les paramètres reçus
+        logger.log_info(f"Starting GCS path generation with template: {template} and parameters: {parameters}", context={'mod': 'GCSController', 'action': 'GeneratePaths'})
+
         gcs_paths = []
 
+        # Extraction des plages de dates
         year_range = parameters.get('year_range', [])
         month_range = parameters.get('month_range', [])
         day_range = parameters.get('day_range', [1])  # Default to day 1 if not provided
-        parameters['file_format'] = file_format
+        
+        # Log des plages de dates
+        logger.log_info(f"Year range: {year_range}, Month range: {month_range}, Day range: {day_range}", context={'mod': 'GCSController', 'action': 'DateRanges'})
 
+        # Ajout du format de fichier aux paramètres
+        parameters['file_format'] = file_format
+        logger.log_info(f"File format set to: {file_format}", context={'mod': 'GCSController', 'action': 'FileFormat'})
+
+        # Génération des chemins en fonction des plages de dates
         for year in year_range:
             for month in month_range:
                 for day in day_range:
                     try:
+                        # Log pour chaque combinaison de date
+                        logger.log_info(f"Generating path for year={year}, month={month}, day={day}", context={'mod': 'GCSController', 'action': 'DateCombination'})
+                        
+                        # Mise à jour des paramètres avec les valeurs de l'année, du mois et du jour
                         parameters.update({'year': year, 'month': month, 'day': day})
+                        
+                        # Génération du chemin avec le template
                         path = template.format(**parameters)
                         gcs_paths.append(path)
+
+                        # Log pour chaque chemin généré
+                        logger.log_info(f"Generated path: {path}", context={'mod': 'GCSController', 'action': 'PathGenerated'})
+
                     except KeyError as e:
+                        # Log d'erreur si une clé est manquante dans le template
                         logger.log_error(f"Missing key for path generation: {e}", context={'mod': 'GCSController', 'action': 'GeneratePathsError'})
                         continue
                     except ValueError:
+                        # Log d'avertissement pour une combinaison de date invalide
                         logger.log_warning(f"Invalid date combination: year={year}, month={month}, day={day}", context={'mod': 'GCSController', 'action': 'GeneratePathsWarning'})
                         continue
 
+        # Log final avec le nombre total de chemins générés
         logger.log_info(f"Generated {len(gcs_paths)} GCS paths.", context={'mod': 'GCSController', 'action': 'GeneratePathsComplete'})
         return gcs_paths
 

@@ -93,7 +93,7 @@ def get_spark_session(app_name="AggTrades_Transformation"):
 spark = get_spark_session()
 
 log_file_path = (
-    "/root/Trustia/cicada-ingestion-Binance/cores/aggTrades/historical/transformation/src/app.log"
+    "/root/EosData/cicada-ingestion-Binance/cores/aggTrades/historical/transformation/src/app.log"
 )
 
 # Configure logging

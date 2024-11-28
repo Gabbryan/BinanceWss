@@ -25,7 +25,7 @@
 
 
 Klines ----->>
-PATH : Trustia-data/Transformation/bars/market/brokers/pairs/year/month/day
+PATH : EosData-data/Transformation/bars/market/brokers/pairs/year/month/day
 files: 
 
 volumes_bars_MACDRSIEWMA_btcsudt_20200101-20220402.parquet
@@ -47,6 +47,6 @@ exchange : Binance
         Kucoin
 
 Volumes Bars ---->
-PATH : Trustia-data/Transformation/bars/market/pairs/Volumes_bars/indicators
+PATH : EosData-data/Transformation/bars/market/pairs/Volumes_bars/indicators
 
 """

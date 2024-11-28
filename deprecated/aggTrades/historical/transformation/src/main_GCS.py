@@ -32,7 +32,7 @@ from utils.gcs_module import gcsModule
 # Load the log file path from environment variable
 log_file_path = os.getenv(
     "LOG_FILE_PATH",
-    "/Trustia/cicada-ingestion-Binance/cores/aggTrades/historical/transformation/src/app.log",
+    "/EosData/cicada-ingestion-Binance/cores/aggTrades/historical/transformation/src/app.log",
 )
 
 # Configure logging

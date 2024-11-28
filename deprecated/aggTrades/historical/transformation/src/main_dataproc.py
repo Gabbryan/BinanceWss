@@ -27,7 +27,7 @@ from config import config
 findspark.init()
 
 # Set the path to your Google Cloud service account key file
-service_account_path = "/root/Trustia/cicada-ingestion-Binance/cores/aggTrades/historical/transformation/src/service-account-key.json"
+service_account_path = "/root/EosData/cicada-ingestion-Binance/cores/aggTrades/historical/transformation/src/service-account-key.json"
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = service_account_path
 BUCKET_NAME = "production-trustia-raw-data"
 
@@ -75,7 +75,7 @@ def get_spark_session(app_name="AggTrades_Transformation"):
 spark = get_spark_session()
 
 log_file_path = (
-    "/root/Trustia/cicada-ingestion-Binance/cores/aggTrades/historical/transformation/src/app.log"
+    "/root/EosData/cicada-ingestion-Binance/cores/aggTrades/historical/transformation/src/app.log"
 )
 
 # Configure logging

@@ -128,44 +128,67 @@ class BinanceDataVision:
         """
         Process an individual task (can be run in a thread).
         """
+        # Vérification du format de la tâche
         if len(task) == 4:
             url, symbol, timeframe, date = task
+            self.logger.log_info(f"Received task with timeframe: {task}", context={'mod': 'BinanceDataVision', 'action': 'ProcessTask'})
         elif len(task) == 3:
             url, symbol, date = task
             timeframe = None
+            self.logger.log_info(f"Received task without timeframe: {task}", context={'mod': 'BinanceDataVision', 'action': 'ProcessTask'})
         else:
             self.logger.log_error(f"Invalid task format: {task}", context={'mod': 'BinanceDataVision', 'action': 'ProcessTask'})
             return
 
+        # Formattage de la date pour le log
         formatted_date = date.strftime("%Y-%m-%d")
-
         self.logger.log_info(f"Processing {symbol} for {formatted_date}.", context={'mod': 'BinanceDataVision', 'action': 'ProcessTask'})
-        market = self._get_market(url)
 
+        # Détermination du marché
+        market = self._get_market(url)
+        self.logger.log_info(f"Determined market for URL {url}: {market}", context={'mod': 'BinanceDataVision', 'action': 'DetermineMarket'})
+
+        # Préparation des paramètres pour la génération des chemins GCS
         params = {
             'symbol': symbol,
             'market': market,
-            'year': date.year,
-            'month': date.month,
-            'day': date.day,
+            'year_range': [date.year],
+            'month_range': [date.month],    
+            'day_range': [date.day],
             'stream': self.stream
         }
+        self.logger.log_info(f"Parameters for GCS path generation: {params}", context={'mod': 'BinanceDataVision', 'action': 'PrepareParams'})
+
+        # Choix du template en fonction de la présence d'un timeframe
         if timeframe:
             params['timeframe'] = timeframe
             params['bar'] = 'klines'
             template = "Raw/binance-data-vision/historical/{symbol}/{market}/{stream}/{timeframe}/{year}/{month:02d}/{day:02d}/data.parquet"
         else:
             template = "Raw/binance-data-vision/historical/{symbol}/{market}/{stream}/{year}/{month:02d}/{day:02d}/data.parquet"
+        self.logger.log_info(f"Using template: {template}", context={'mod': 'BinanceDataVision', 'action': 'TemplateSelection'})
 
+        # Appel à generate_gcs_paths avec log des chemins générés
         gcs_paths = self.GCSController.generate_gcs_paths(params, template)
+        self.logger.log_info(f"GCS paths generated: {gcs_paths}", context={'mod': 'BinanceDataVision', 'action': 'GeneratePathsComplete'})
 
+        # Téléchargement et extraction des données
         df = self.download_and_extract(url, symbol, date, timeframe)
+        if df is None:
+            self.logger.log_error(f"Failed to download or extract data for {symbol} on {formatted_date}.", context={'mod': 'BinanceDataVision', 'action': 'DownloadExtractError'})
+            return
+        self.logger.log_info(f"Data downloaded and extracted for {symbol} on {formatted_date}.", context={'mod': 'BinanceDataVision', 'action': 'DataExtracted'})
 
+        # Vérification de l'existence de chaque chemin et condition pour éviter les téléchargements inutiles
         for gcs_path in gcs_paths:
             if self.GCSController.check_file_exists(gcs_path):
                 self.logger.log_info(f"File {gcs_path} already exists. Skipping download and upload.", context={'mod': 'BinanceDataVision', 'action': 'CheckFileExists'})
-                return
-            
+                continue
+            else:
+                self.GCSController.upload_dataframe_to_gcs(df, gcs_path, file_format="parquet")
+                self.logger.log_info(f"Uploading file to {gcs_path}.", context={'mod': 'BinanceDataVision', 'action': 'UploadFile'})
+    
+    
     def download_and_extract(self, base_url, symbol, date, timeframe=None):
 
         formatted_date = date.strftime("%Y-%m-%d")

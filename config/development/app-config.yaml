@@ -1,12 +1,31 @@
-$Binance-data-vision:
+Binance-data-vision:
   symbols:
     - BTCUSDT
     - ETHUSDT
-  stream: trades
+    - SOLUSDT
+    - DOGEUSDT
+    - BNBUSDT
+    - TRXUSDT
+    - TONUSDT
+    - LINKUSDT
+    - SUIUSDT
+    - UNIUSDT
+    - PEPEUSDT
+    - TAOUSDT
+    - FILUSDT
+    - FETUSDT
+    - KASUSDT
+    - RENDERUSDT
+    - STXUSDT
+    - ARBUSDT
+    - SHIBUSDT
+    - THETAUSDT
+    - ATOMUSDT
+  stream: aggTrades
   timeframes:
     - 4h
     - 30m
-  bucket: production-trustia-raw-data
+  bucket: cicada-ingestion-dev
   start_date: 2024-01-01
   end_date:
   base_url: https://data.binance.vision/data/

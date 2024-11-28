@@ -330,4 +330,3 @@ class BinanceWSSClient(WSSClient):
         df = self.validate_dataframe(df, 'depth')
 
         self.save_data_to_gcs(df, "depth")
-
